@@ -2,5 +2,6 @@
 {
     public class GitClass
     {
+        string? Git { get; set; }
     }
 }
