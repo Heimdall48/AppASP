@@ -1,0 +1,53 @@
+﻿@model Dictionary<string, AppASP.Models.MenuObject>
+@{
+    string linkclass1 = "nav-link text-light";
+    string linkclass2 = "nav-link fw-bold";
+    string currentclass = string.Empty;
+}
+
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-info border-bottom box-shadow mb-3">
+<div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+            <ul class="navbar-nav" >
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <li class="nav-item">
+                        <form method="post" asp-controller="Account" asp-action="Logout">
+                            <button type="submit" class="btn btn-link">Выход</button>
+                        </form>
+                    </li>
+                }
+                else
+                {
+                    @foreach (var s in Model)
+                    {
+                        if (s.Key != "Регистрация" && s.Key != "Вход")
+                            continue;
+                        currentclass = s.Value.IsActive ? linkclass2 : linkclass1;
+                        <li class="nav-item">
+                            <a class=@currentclass asp-area="" asp-controller="Account" asp-action=@s.Value.ControllerName>@s.Key</a>
+                        </li>
+                    }
+                }
+            </ul>
+
+            <ul class="navbar-nav flex-grow-1" >
+            @foreach (var s in Model)
+            {
+                if (s.Key == "Регистрация" || s.Key == "Вход" || !s.Value.IsVisible)
+                    continue;
+                currentclass = s.Value.IsActive ? linkclass2 : linkclass1;
+                <li class="nav-item">
+                        <a class=@currentclass asp-area="" asp-controller="Home" asp-action=@s.Value.ControllerName>@s.Key</a>
+                </li>
+            }
+            </ul>
+          
+            
+        </div>
+    </div>
+</nav>                  

@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MegaCoreApplication</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="~/css/Main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/AppASP.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        @if (IsSectionDefined("Header"))
+        {
+            @RenderSection("Header")
+        }
+             
+    </header>
+    <div class="container">
+         <input id="MyUrl" type="hidden" value=@Url.Content("~/Home") />
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            @{
+                string vFooter = string.Empty;
+                vFooter = (User.Identity != null && User.Identity.IsAuthenticated) ? User.Identity.Name : "Авторизация не пройдена";
+            }
+           
+            &copy; 2022 - MegaCoreApplication - <b>@vFooter</b> 
+            
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+

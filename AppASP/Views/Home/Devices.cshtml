@@ -1,0 +1,11 @@
+﻿@model Dictionary<string, AppASP.Models.MenuObject>
+@{
+    ViewData["Title"] = "Приборы";
+}
+
+@section Header {
+@await Html.PartialAsync("MainMenu", Model)
+}
+
+<div>Тут будут Devices. И очень много</div>
+

@@ -1,0 +1,90 @@
+﻿@model AppASP.ViewModels.ModelView 
+@{
+    ViewData["Title"] = "Модели";
+}
+
+@section Header {
+    @await Html.PartialAsync("MainMenu", Model.menuValuePairs)
+}
+
+<div class="card">
+           <div class="card-header">
+                 <h5>Модели</h5>
+                    <button id="btnModelAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить модель">Добавить</button>
+                    <button id="btnModelUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить модель">Изменить</button>
+                    <button id="btnModelDelete" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="Удалить модель?">Удалить</button>
+           </div> 
+           <div class="card-body">
+                   <input id="Current_Model_ID" type="hidden" value="0" />
+               <table class="table table-bordered table-condensed">
+                <thead class="table-light">
+                 <tr><th>Имя</th><th>Описание</th></tr>
+            </thead>
+            <tbody id='model_body'>
+            @foreach (var item in Model.models)
+            {
+                <tr data-id=@item.ModelId>
+                    <td><p>@item.Name</p></td>
+                    <td><p>@item.Description</p></td>
+                </tr>
+            }
+            </tbody>
+            </table>
+            </div>
+        
+</div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Заголовок модального окна</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        <input id="Model_ID" type="hidden" />
+      </div>
+      <div class="modal-body">
+        <div class="form-horizontal">
+                <div>
+                    <label class="control-label col-md-1" for="edModelName">Название</label>
+                    <div class="col-md-11 col-md-offset-1">
+                        <input autofocus id="edModelName" type="text" class="form-control" />
+                    </div>
+                </div>
+                <div>
+                    <label class="control-label col-md-1" for="edModelDescription">Описание</label>
+                    <div class="col-md-11 col-md-offset-1">
+                      <textarea autofocus name="edModelDescription" class="form-control" id="edModelDescription" placeholder="Не более 1000 символов" maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <label class="control-label col-md-1" for="edModelPhoto">Фото</label><br />
+                    <div id="divImageResult" align="center"></div>
+                    
+                     <div class="col-md-11 col-md-offset-1">
+                      <input autofocus name="edModelPhoto" class="form-control" id="edModelPhoto" type="file" />
+                    </div>
+                </div>
+                <div id="divSaveModelMessage"></div>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        <button id="btnModelSave" type="button" class="btn btn-primary">Сохранить изменения</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+           <div class="card-header">
+                 <h5>Ревизии</h5>
+                    <button id="btnRevisionAdd" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="Добавить ревизию">Добавить</button>
+                    <button id="btnRevisionUpdate" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="Изменить ревизию">Изменить</button>
+                    <button id="btnRevisionDelete" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="Удалить ревизию">Удалить</button>
+           </div> 
+           
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="~/js/model.js"></script>
