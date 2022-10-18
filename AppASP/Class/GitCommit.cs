@@ -2,5 +2,6 @@
 {
     public class GitCommit
     {
+        string TestField { get; set; }
     }
 }
