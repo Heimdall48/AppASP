@@ -53,27 +53,39 @@ namespace AppASP.Controllers
             return imageSrc?.Trim();
         }
 
-        /*public static bool IsBase64String(string base64)
+        private bool CheckOnDeleteModel(int pModel_ID)
         {
-            Span<byte> buffer = new Span<byte>(new byte[base64.Length]);
-            return Convert.TryFromBase64String(base64, buffer, out int bytesParsed);
-        }*/
+            //Проверка на связь с существующими приборами
+            var vKey = (from k in db.Devices join r in db.Revisions on k.Revision_ID equals r.RevisionId
+                        where r.Model_Id == pModel_ID
+                        select k).FirstOrDefault();
+
+            if (vKey != null)
+                return false;
+
+            return true;
+        }
+
+        public ActionResult CheckDeleteModel(int pModel_ID)
+        {
+           return PartialView(!CheckOnDeleteModel(pModel_ID));
+        }
+
+        public ActionResult DeleteModel(int pModel_ID)
+        {
+           db.DeleteModel(pModel_ID);
+           return GetViewModels();
+        }
+
+        public ActionResult GetViewModels()
+        {
+            return PartialView("BuildModels", db.Models.ToList());
+        }
 
         public ActionResult SaveModel(string name, int current_ID, string description,string image)
         {
             name = HttpUtility.UrlDecode(name);
             description = HttpUtility.UrlDecode(description);
-
-            /*byte[]? vPhoto = null;
-            //Приводим image к нужной кодировке
-            int i = image.IndexOf(",");
-            if (i > 0)
-                image = image.Substring(i + 1, image.Length - i - 1).Trim();
-
-            if (!string.IsNullOrEmpty(image) && IsBase64String(image))
-                vPhoto = Convert.FromBase64String(image);
-            else
-                image = String.Empty;*/
 
             AppASP.Models.ItemModify vModelModify = new Models.ItemModify();
 
@@ -85,5 +97,7 @@ namespace AppASP.Controllers
             }
             return PartialView(vModelModify);
         }
+
+    
     }
 }
