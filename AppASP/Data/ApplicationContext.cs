@@ -11,8 +11,6 @@ namespace AppASP.Data
     public class ApplicationContext : DbContext
     {
         public DbSet<Model> Models { get; set; } = null!;
-        public DbSet<Revision> Revisions { get; set; } = null!;
-        public DbSet<Device> Devices { get; set; } = null!;
         public DbSet<AccessObject> AccessObjects { get; set; } = null!;
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
@@ -32,12 +30,6 @@ namespace AppASP.Data
             SqlParameter vPhoto = new SqlParameter("@Photo", System.Data.SqlDbType.NVarChar, 3000000, System.Data.ParameterDirection.Output, true, 0, 0, string.Empty, System.Data.DataRowVersion.Default, DBNull.Value);
             this.Database.ExecuteSqlRaw("SELECT TOP 1 @Photo = M.Photo FROM dbo.Model M WHERE M.Model_ID = @Model_ID", vPhoto, vModel_ID);
             return vPhoto.Value;
-        }
-
-        public void DeleteModel(int pModel_ID)
-        {
-            this.Database.ExecuteSqlRaw(String.Format("DELETE R FROM dbo.Revision R WHERE R.Model_ID = {0}", pModel_ID));
-            this.Database.ExecuteSqlRaw(String.Format("DELETE M FROM dbo.Model M WHERE M.Model_ID = {0}", pModel_ID));
         }
 
         public void SaveModel(string name, int current_ID, string description, string? image, AppASP.Models.ItemModify itemmodify)
