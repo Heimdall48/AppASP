@@ -3,6 +3,8 @@
     ViewData["Title"] = "Модели";
 }
 
+<link href="~/css/main.css" rel="stylesheet" type="text/css" rel="stylesheet" />
+
 @section Header {
     @await Html.PartialAsync("MainMenu", Model.menuValuePairs)
 }
@@ -57,14 +59,18 @@
                       <textarea autofocus name="edModelDescription" class="form-control" id="edModelDescription" placeholder="Не более 1000 символов" maxlength="1000"></textarea>
                     </div>
                 </div>
-                <div>
+                <div class="container">
                     <label class="control-label col-md-1" for="edModelPhoto">Фото</label><br />
-                    <div id="divImageResult" align="center"></div>
-                    
-                     <div class="col-md-11 col-md-offset-1">
-                      <input autofocus name="edModelPhoto" class="form-control" id="edModelPhoto" type="file" />
+
+                    <div id="divImageResult" class="container">
+                        <img alt="Изображение не выбрано" style="align-content:center;width:80%" name="imgModelPhoto" id="imgModelPhoto" src="" />
                     </div>
-                </div>
+
+                    <div class="col-md-11 col-md-offset-1">
+                        <input autofocus name="edModelPhoto" class="form-control" id="edModelPhoto" type="file" accept="image/*" />
+                    </div> 
+                    
+                  </div>
                 <div id="divSaveModelMessage"></div>
             </div>
       </div>

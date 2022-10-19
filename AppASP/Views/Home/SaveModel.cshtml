@@ -1,0 +1,12 @@
+﻿@model AppASP.Models.ItemModify
+<div id="divSaveModelMessage">
+    @if (Model.IsExists)
+    {
+            <span id="SaveErrorModel" class="ErrorClass">Модель с таким названием уже существует</span>
+            <input id="LocateModel_ID" type="hidden" value=0 />
+    }
+    else
+    {
+            <input id="LocateModel_ID" type="hidden" value=@Model.ID />
+    }
+</div>

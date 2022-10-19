@@ -1,3 +1,15 @@
 ﻿.selectlines {
     background-color: bisque;
 }
+
+.ErrorClass {
+    color: red;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.InformationClass {
+    color: orange;
+    font-weight: bold;
+    margin-top: 3px;
+}
