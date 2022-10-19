@@ -44,11 +44,22 @@ $(document).ready(
             $('#edModelName').focus();
         });
 
+     
+        $('#exampleModal').on('hidden.bs.modal', function (event) {
+            if (ModelEF == null)
+                return;
+            ModelEF.dispose();
+            ModelEF = null;
+        });
+
         $('#exampleModal').on('show.bs.modal', function (event) {
             //Прячем сообщение об ошибках
             /*var ErrorSpan = document.getElementById("SaveErrorDeviceType");
             if (ErrorSpan != null)
                 ErrorSpan.style.display = "none";*/
+            $("#imgModelPhoto").attr('src', '');
+            $('#edModelPhoto').val("");
+            $('#divImageResult').hide();
 
             //Проверяем что щас делаем
             var vID = $("#Model_ID").val().trim(); 
@@ -70,7 +81,12 @@ $(document).ready(
                     },
                     success: function (data) {
                         //Перестройка ключа результирующего
-                        $('#divImageResult').replaceWith(data);
+                        //$('#divImageResult').replaceWith(data);
+                        $("#imgModelPhoto").attr('src', data);
+                        if (data != '') {
+                            $('#divImageResult').show();
+                            //$('#edModelPhoto').text("Файл выбран");
+                        }
                     },
                     error: function (jqxhr, status, errorMsg) {
                         $('#divImageResult').html('<b>Произошла ошибка в процесе получения изображения!</b>');
@@ -80,6 +96,41 @@ $(document).ready(
             }
         });
 
+        $("#edModelPhoto").change(function () {
+            var length = this.files.length;
+            if (!length) {
+                $("#imgModelPhoto").attr('src', '');
+                $('#divImageResult').hide();
+                return false;
+            }
+            if (this.files[0].size > 3000000) {
+                alert('Максимальный размер файла должен быть 3 мегабайта!');
+                $("#imgModelPhoto").attr('src', '');
+                $("#edModelPhoto").val("");
+                $('#divImageResult').hide();
+                return false;
+            }
+            useImage(this);
+        });
+
+        function useImage(img) {
+            var file = img.files[0];
+            var imagefile = file.type;
+            var match = ["image/jpeg", "image/png", "image/jpg"];
+            if (!((imagefile == match[0]) || (imagefile == match[1]) || (imagefile == match[2]))) {
+                alert("Invalid File Extension");
+            } else {
+                var reader = new FileReader();
+                reader.onload = imageIsLoaded;
+                reader.readAsDataURL(img.files[0]);
+            }
+
+            function imageIsLoaded(e) {
+                $("#imgModelPhoto").attr('src', e.target.result);
+                $('#divImageResult').show();
+            }
+        }
+
         $('#btnModelSave').click(function () {
 
             var vName = $("#edModelName").val().trim();
@@ -88,28 +139,25 @@ $(document).ready(
                 return;
             }
 
-            ModelEF.hide();
-            ModelEF.addEventListener('shown.bs.hidden', event => {
-                ModelEF.dispose();
-            })
+            //string name, int current_ID, string description, byte[] image
 
-
-
-          /*  var vID = $("#DeviceType_ID").val().trim();
+            var vID = $("#Model_ID").val().trim();
+            var vDescription = $("#edModelDescription").val().trim();
+            var img = $("#imgModelPhoto").attr('src');
 
             $.ajax({
                 type: 'POST',
-                url: GetPath() + '/SaveDeviceType',
-                data: { 'Name': encodeURIComponent(vName), 'Current_ID': vID, 'Code': vCode },
+                url: GetPath() + '/SaveModel',
+                data: { 'name': encodeURIComponent(vName), 'current_ID': vID, 'description': vDescription, 'image': img },
                 success: function (data) {
                     //Текущее представление надо перестроить
-                    $('#divSaveDeviceTypeMessage').replaceWith(data);
+                    $('#divSaveModelMessage').replaceWith(data);
                     //Если ошибок не существует, то закрываем форму. Здесь 0 - признак ошибки
-                    vID = $("#LocateDeviceType_ID").val().trim();
+                    vID = $("#LocateModel_ID").val().trim();
                     if (vID != '0') {
-                        $('#ModifyDeviceType').modal('hide');
+                        ModelEF.hide();
                         //Необходимо переоткрыть грид и спозиционироваться
-                        $.ajax({
+                        /*$.ajax({
                             type: 'POST',
                             url: GetPath() + '/GetViewDeviceTypes',
                             data: {},
@@ -121,15 +169,15 @@ $(document).ready(
                             error: function (jqxhr, status, errorMsg) {
                                 alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                             }
-                        });
+                        });*/
                         //----------------------------------------------------
                     }
                 },
                 error: function (jqxhr, status, errorMsg) {
-                    $('#divSaveDeviceTypeMessage').html('<b>Произошла ошибка в процесе выполнения!</b>');
+                    $('#divSaveModelMessage').html('<b>Произошла ошибка в процесе выполнения!</b>');
                     alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                 }
-            });*/
+            });
         });
 
 
@@ -146,13 +194,15 @@ $(document).ready(
             });
         }
 
-        var ModelEF;
+        var ModelEF = null;
 
         function InitModelEF() {
-            ModelEF = new bootstrap.Modal('#exampleModal', {
-                keyboard: true
-            })
-           ModelEF.show(); 
+            if (ModelEF == null) {
+                ModelEF = new bootstrap.Modal('#exampleModal', {
+                    keyboard: true
+                })
+            }
+            ModelEF.show(); 
         }
 
         PrepareModelGrid();
