@@ -10,30 +10,16 @@
 }
 
 <div class="card">
-           <div class="card-header">
-                 <h5>Модели</h5>
-                    <button id="btnModelAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить модель">Добавить</button>
-                    <button id="btnModelUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить модель">Изменить</button>
-                    <button id="btnModelDelete" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="Удалить модель?">Удалить</button>
-           </div> 
-           <div class="card-body">
-                   <input id="Current_Model_ID" type="hidden" value="0" />
-               <table class="table table-bordered table-condensed">
-                <thead class="table-light">
-                 <tr><th>Имя</th><th>Описание</th></tr>
-            </thead>
-            <tbody id='model_body'>
-            @foreach (var item in Model.models)
-            {
-                <tr data-id=@item.ModelId>
-                    <td><p>@item.Name</p></td>
-                    <td><p>@item.Description</p></td>
-                </tr>
-            }
-            </tbody>
-            </table>
-            </div>
-        
+        <div class="card-header">
+                <h5>Модели</h5>
+                <button id="btnModelAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить модель">Добавить</button>
+                <button id="btnModelUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить модель">Изменить</button>
+                <button id="btnModelDelete" type="button" class="btn btn-success">Удалить</button>
+                <div id="ModelError">
+                    <input id="IsModelError" type="hidden" value="0" />
+                </div>
+        </div> 
+        @await Html.PartialAsync("BuildModels", Model.models) ;   
 </div>
 
 <!-- Модальное окно -->

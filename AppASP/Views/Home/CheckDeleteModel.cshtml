@@ -1,0 +1,12 @@
+﻿@model System.Boolean
+
+<div id="ModelError">
+    @if (Model)
+    {
+        <input id="IsModelError" type="hidden" value="1" />
+    }
+    else
+    {
+        <input id="IsModelError" type="hidden" value="0" />
+    }
+</div>

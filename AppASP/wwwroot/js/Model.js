@@ -96,6 +96,62 @@ $(document).ready(
             }
         });
 
+        function DeleteModel(pIsConfirmation) {
+            //Если нет текущего, то посылаем
+            var vId = GetCurrentModel_ID();
+            if (vId == "0" || vId === undefined) {
+                alert("Не выбрана модель для удаления");
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/CheckDeleteModel',
+                data: { 'pModel_ID': vId },
+                success: function (data) {
+                    $('#ModelError').replaceWith(data);
+                    //Проверка флага на возможность удаления
+                    var vIsError = $("#IsModelError").val().trim();
+                    if (vIsError == '1') {
+                        alert('Модель используется. Удаление запрещено.');
+                        return;
+                    }
+
+                    if (pIsConfirmation) {
+                        var resultActionUser = confirm("Удалить модель?");
+                        if (!resultActionUser)
+                            return;
+                        DeleteModel(false);
+                    }
+                    else {
+                        //Удаление
+                        $.ajax({
+                            type: 'POST',
+                            url: GetPath() + '/DeleteModel',
+                            data: { 'pModel_ID': vId },
+                            success: function (data) {
+                                $('#dvModels').replaceWith(data);
+                                PrepareModelGrid();
+                            },
+                            error: function (jqxhr, status, errorMsg) {
+                                alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                            }
+                        });
+                    }
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    $('#ModelError').html('<b>Произошла ошибка в процесе проверки возможности удаления !</b>');
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                    return;
+                }
+            });
+        }
+
+        //Удаление модели
+        $('#btnModelDelete').click(function () {
+            DeleteModel(true);
+        });
+
         $("#edModelPhoto").change(function () {
             var length = this.files.length;
             if (!length) {
@@ -139,8 +195,6 @@ $(document).ready(
                 return;
             }
 
-            //string name, int current_ID, string description, byte[] image
-
             var vID = $("#Model_ID").val().trim();
             var vDescription = $("#edModelDescription").val().trim();
             var img = $("#imgModelPhoto").attr('src');
@@ -157,19 +211,19 @@ $(document).ready(
                     if (vID != '0') {
                         ModelEF.hide();
                         //Необходимо переоткрыть грид и спозиционироваться
-                        /*$.ajax({
+                        $.ajax({
                             type: 'POST',
-                            url: GetPath() + '/GetViewDeviceTypes',
+                            url: GetPath() + '/GetViewModels',
                             data: {},
                             success: function (data) {
-                                $('#dvDeviceTypes').replaceWith(data);
-                                PrepareDeviceTypeGrid();
+                                $('#dvModels').replaceWith(data);
+                                PrepareModelGrid();
                                 Locate(vID);
                             },
                             error: function (jqxhr, status, errorMsg) {
                                 alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                             }
-                        });*/
+                        });
                         //----------------------------------------------------
                     }
                 },
@@ -181,6 +235,14 @@ $(document).ready(
         });
 
 
+        function Locate(pID) {
+            $('#model_body tr').removeClass('selectlines');
+            $('#model_body tr[data-id="' + pID + '"]').toggleClass('selectlines');
+            //Идентификатор вида продукции
+            $("#Current_Model_ID").val(pID);
+            //RefreshDataDetail();
+        }
+
         function PrepareModelGrid() {
             //Предварительно подчищаем детальные данные
             // ClearDataDetail();
@@ -188,8 +250,8 @@ $(document).ready(
                 $('#model_body tr').removeClass('selectlines');
                 $(this).toggleClass('selectlines');
                 //Идентификатор вида продукции
-                var vDeviceType_ID = $(this).data("id");
-                $("#Current_Model_ID").val(vDeviceType_ID);
+                var vModel_ID = $(this).data("id");
+                $("#Current_Model_ID").val(vModel_ID);
                 //RefreshDataDetail();
             });
         }
