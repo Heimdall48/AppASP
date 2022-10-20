@@ -97,7 +97,6 @@ namespace AppASP.Controllers
             }
             return PartialView(vModelModify);
         }
-
-    
+            
     }
 }

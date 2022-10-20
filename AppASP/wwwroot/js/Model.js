@@ -30,7 +30,8 @@ exampleModal.addEventListener('show.bs.modal', event => {
        //$(this).find('#edDeviceTypeName').val($();
        // $(this).find('#edDeviceTypeCode').val($('#model_body tr[data-id="' + vID + '"]>td:eq(1)').text().trim());
     }
-});*/
+});
+*/
 
 $(document).ready(
     function () {
