@@ -21,7 +21,15 @@ namespace AppASP.Controllers
             db = context;
         }
 
-         public IActionResult Index()
+        public ActionResult GetViewRevisions(int pModel_ID)
+        {
+            var vRevisions = (from k in db.Revisions
+                              where k.Model_Id == pModel_ID
+                              select k);
+            return PartialView("BuildRevisions", vRevisions);
+        }
+
+        public IActionResult Index()
          {
             return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, User.Identity?.Name, db));
         }
@@ -98,6 +106,20 @@ namespace AppASP.Controllers
             return PartialView(vModelModify);
         }
 
-    
+        public ActionResult SaveRevision(string name, int current_ID, int model_ID)
+        {
+            name = HttpUtility.UrlDecode(name);
+        
+            AppASP.Models.ItemModify vModelModify = new Models.ItemModify();
+
+            var vRevision = (from ss in db.Revisions where ss.Name == name && ss.RevisionId != current_ID && ss.Model_Id == model_ID select ss).FirstOrDefault();
+            if (vRevision == null)
+            {
+                vModelModify.IsExists = false;
+                db.SaveRevision(name, current_ID, model_ID, vModelModify);
+            }
+            return PartialView(vModelModify);
+        }
+
     }
 }

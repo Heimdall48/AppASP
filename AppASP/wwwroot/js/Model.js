@@ -52,11 +52,22 @@ $(document).ready(
             ModelEF = null;
         });
 
+        $('#RevisionModal').on('shown.bs.modal', function (event) {
+            $('#edRevisionName').focus();
+        });
+
+        $('#RevisionModal').on('hidden.bs.modal', function (event) {
+            if (RevisionEF == null)
+                return;
+            RevisionEF.dispose();
+            RevisionEF = null;
+        });
+
         $('#exampleModal').on('show.bs.modal', function (event) {
             //Прячем сообщение об ошибках
-            /*var ErrorSpan = document.getElementById("SaveErrorDeviceType");
+            var ErrorSpan = document.getElementById("SaveErrorModel");
             if (ErrorSpan != null)
-                ErrorSpan.style.display = "none";*/
+                ErrorSpan.style.display = "none";
             $("#imgModelPhoto").attr('src', '');
             $('#edModelPhoto').val("");
             $('#divImageResult').hide();
@@ -69,7 +80,7 @@ $(document).ready(
                 $(this).find('#edModelDescription').val("");
             }
             else {
-                $(this).find('#exampleModalLabel').text("Изменить вид продукции");
+                $(this).find('#exampleModalLabel').text("Изменить модель");
                 $(this).find('#edModelName').val($('#model_body tr[data-id="' + vID + '"]>td:eq(0)>p').text().trim());
                 $(this).find('#edModelDescription').val($('#model_body tr[data-id="' + vID + '"]>td:eq(1)>p').text().trim());
                 //Пытаемся подтянуть изображение
@@ -81,7 +92,6 @@ $(document).ready(
                     },
                     success: function (data) {
                         //Перестройка ключа результирующего
-                        //$('#divImageResult').replaceWith(data);
                         $("#imgModelPhoto").attr('src', data);
                         if (data != '') {
                             $('#divImageResult').show();
@@ -95,6 +105,45 @@ $(document).ready(
                 });
             }
         });
+
+        $('#RevisionModal').on('show.bs.modal', function (event) {
+            //Прячем сообщение об ошибках
+            var ErrorSpan = document.getElementById("SaveErrorRevision");
+            if (ErrorSpan != null)
+                ErrorSpan.style.display = "none";
+            //Проверяем что щас делаем
+            var vID = $("#Revision_ID").val().trim();
+            if (vID == 0) {
+                $(this).find('#RevisionModalLabel').text("Добавить ревизию");
+                $(this).find('#edRevisionName').val("");
+            }
+            else {
+                $(this).find('#RevisionModalLabel').text("Изменить ревизию");
+                $(this).find('#edRevisionName').val($('#revision_body tr[data-id="' + vID + '"]>td:eq(1)>p').text().trim());
+            }
+        });
+
+
+        var ModelEF = null;
+        var RevisionEF = null;
+
+        function InitModelEF() {
+            if (ModelEF == null) {
+                ModelEF = new bootstrap.Modal('#exampleModal', {
+                    keyboard: true
+                })
+            }
+            ModelEF.show();
+        }
+
+        function InitRevisionEF() {
+            if (RevisionEF == null) {
+                RevisionEF = new bootstrap.Modal('#RevisionModal', {
+                    keyboard: true
+                })
+            }
+            RevisionEF.show();
+        }
 
         function DeleteModel(pIsConfirmation) {
             //Если нет текущего, то посылаем
@@ -187,6 +236,46 @@ $(document).ready(
             }
         }
 
+        function RefreshDataDetail() {
+            var vId = GetCurrentModel_ID();
+            if (vId == "0" || vId === undefined) {
+                vId = 0;
+            }
+            RefreshRevisions(vId);
+        }
+
+        function ClearRevisions() {
+            document.getElementById('dvRevisions').innerHTML = "";
+        }
+
+        function PrepareRevisionGrid() {
+            $('#revision_body tr').click(function () {
+                $('#revision_body tr').removeClass('selectlines');
+                $(this).toggleClass('selectlines');
+                //Идентификатор вида продукции
+                var vRevision_ID = $(this).data("id");
+                $("#Current_Revision_ID").val(vRevision_ID);
+            });
+        }
+
+        function RefreshRevisions(pID) {
+            
+            ClearRevisions();
+
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/GetViewRevisions',
+                data: { 'pModel_ID': pID },
+                success: function (data) {
+                    $('#dvRevisions').replaceWith(data);
+                    PrepareRevisionGrid();
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                }
+            });
+        }
+
         $('#btnModelSave').click(function () {
 
             var vName = $("#edModelName").val().trim();
@@ -235,12 +324,65 @@ $(document).ready(
         });
 
 
+        $('#btnRevisionSave').click(function () {
+
+            var vName = $("#edRevisionName").val().trim();
+            if (vName == "") {
+                alert('Название должно быть задано');
+                return;
+            }
+
+            var vID = $("#Revision_ID").val().trim();
+            var vModel_ID = GetCurrentModel_ID().trim();
+
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/SaveRevision',
+                data: { 'name': encodeURIComponent(vName), 'current_ID': vID, 'model_ID': vModel_ID },
+                success: function (data) {
+                    //Текущее представление надо перестроить
+                    $('#divSaveRevisionMessage').replaceWith(data);
+                    //Если ошибок не существует, то закрываем форму. Здесь 0 - признак ошибки
+                    vID = $("#LocateRevision_ID").val().trim();
+                    if (vID != '0') {
+                        RevisionEF.hide();
+                        //Необходимо переоткрыть грид и спозиционироваться
+                        $.ajax({
+                            type: 'POST',
+                            url: GetPath() + '/GetViewRevisions',
+                            data: { 'pModel_ID': vModel_ID },
+                            success: function (data) {
+                                $('#dvRevisions').replaceWith(data);
+                                PrepareRevisionGrid();
+                                LocateRevision(vID);
+                            },
+                            error: function (jqxhr, status, errorMsg) {
+                                alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                            }
+                        });
+                        //----------------------------------------------------
+                    }
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    $('#divSaveRevisionMessage').html('<b>Произошла ошибка в процесе выполнения!</b>');
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                }
+            });
+        });
+
+        load();
+
+        function load() {
+            PrepareModelGrid();
+            RefreshDataDetail();
+        }
+
         function Locate(pID) {
             $('#model_body tr').removeClass('selectlines');
             $('#model_body tr[data-id="' + pID + '"]').toggleClass('selectlines');
             //Идентификатор вида продукции
             $("#Current_Model_ID").val(pID);
-            //RefreshDataDetail();
+            RefreshDataDetail();
         }
 
         function PrepareModelGrid() {
@@ -252,26 +394,29 @@ $(document).ready(
                 //Идентификатор вида продукции
                 var vModel_ID = $(this).data("id");
                 $("#Current_Model_ID").val(vModel_ID);
-                //RefreshDataDetail();
+                RefreshDataDetail();
             });
         }
 
-        var ModelEF = null;
-
-        function InitModelEF() {
-            if (ModelEF == null) {
-                ModelEF = new bootstrap.Modal('#exampleModal', {
-                    keyboard: true
-                })
-            }
-            ModelEF.show(); 
+        function LocateRevision(pID) {
+            $('#revision_body tr').removeClass('selectlines');
+            $('#revision_body tr[data-id="' + pID + '"]').toggleClass('selectlines');
+            $("#Current_Revision_ID").val(pID);
         }
 
-        PrepareModelGrid();
-
-        $('#btnModelAdd').click(function () {
+       $('#btnModelAdd').click(function () {
             $("#Model_ID").val(0);
             InitModelEF();
+        });
+
+        $('#btnRevisionAdd').click(function () {
+            var vId = GetCurrentModel_ID();
+            if (vId == "0" || vId === undefined) {
+                alert("Не выбрана текущая модель");
+                return;
+            }
+            $("#Revision_ID").val(0);
+            InitRevisionEF();
         });
 
         $('#btnModelUpdate').click(function () {
@@ -286,8 +431,25 @@ $(document).ready(
             InitModelEF();
         });
 
+        $('#btnRevisionUpdate').click(function () {
+            //Если нет текущего, то посылаем
+            var vId = GetCurrentRevision_ID();
+
+            if (vId == "0" || vId === undefined) {
+                alert("Не выбрана ревизия для редактирования");
+                return;
+            }
+            
+            $("#Revision_ID").val(vId);
+            InitRevisionEF();
+        });
+
         //Получение текущего вида продукции
         function GetCurrentModel_ID() {
             return $("#Current_Model_ID").val();
+        }
+
+        function GetCurrentRevision_ID() {
+            return $("#Current_Revision_ID").val();
         }
     });

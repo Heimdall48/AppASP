@@ -1,0 +1,45 @@
+﻿<!-- Модальное окно -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Заголовок модального окна</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        <input id="Model_ID" type="hidden" />
+      </div>
+      <div class="modal-body">
+        <div class="form-horizontal">
+                <div>
+                    <label class="control-label col-md-1" for="edModelName">Название</label>
+                    <div class="col-md-12 col-md-offset-1">
+                        <input autofocus id="edModelName" type="text" class="form-control" />
+                    </div>
+                </div>
+                <div>
+                    <label class="control-label col-md-1" for="edModelDescription">Описание</label>
+                    <div class="col-md-12 col-md-offset-1">
+                      <textarea autofocus name="edModelDescription" class="form-control" id="edModelDescription" placeholder="Не более 1000 символов" maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="container">
+                    <label class="control-label col-md-1" for="edModelPhoto">Фото</label><br />
+
+                    <div id="divImageResult" class="container">
+                        <img alt="Изображение не выбрано" style="align-content:center;width:80%" name="imgModelPhoto" id="imgModelPhoto" src="" />
+                    </div>
+
+                    <div class="col-md-12">
+                        <input autofocus name="edModelPhoto" class="form-control" id="edModelPhoto" type="file" accept="image/*" />
+                    </div> 
+
+                  </div>
+                <div id="divSaveModelMessage"></div>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnModelSave" type="button" class="btn btn-primary">Сохранить изменения</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>

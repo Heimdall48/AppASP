@@ -64,6 +64,31 @@ namespace AppASP.Data
                                               WHERE Model_ID = @Model_ID", vName, vPhoto, vDescription, vModel_ID);
             }
         }
+
+        public void SaveRevision(string name, int current_ID, int model_ID, AppASP.Models.ItemModify itemmodify)
+        {
+            var vName = new SqlParameter("@Name", name);
+            
+            if (current_ID == 0)
+            {
+                var vModelID = new SqlParameter("@Model_ID", model_ID);
+                SqlParameter vParameter = new SqlParameter("@Revision_ID", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, true, 0, 0, string.Empty, System.Data.DataRowVersion.Default, DBNull.Value);
+                this.Database.ExecuteSqlRaw(@"INSERT INTO [dbo].[Revision] ([Name],Model_ID) 
+                                              VALUES (@Name,@Model_ID)
+                                              SELECT @Revision_ID = SCOPE_IDENTITY()", vName, vModelID, vParameter);
+                itemmodify.ID = Convert.ToInt32(vParameter.Value);
+            }
+            else
+            {
+                var vRevision_ID = new SqlParameter("@Revision_ID", current_ID);
+
+                itemmodify.ID = current_ID;
+                this.Database.ExecuteSqlRaw(@"UPDATE [dbo].[Revision]
+                                              SET [Name] = @Name
+                                              WHERE Revision_ID = @Revision_ID", vName, vRevision_ID);
+            }
+        }
+
     }
   
 }

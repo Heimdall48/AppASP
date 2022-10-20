@@ -1,0 +1,12 @@
+﻿@model AppASP.Models.ItemModify
+<div id="divSaveRevisionMessage">
+    @if (Model.IsExists)
+    {
+                <span id="SaveErrorRevision" class="ErrorClass">Ревизия с таким названием в модели уже существует</span>
+                <input id="LocateRevision_ID" type="hidden" value=0 />
+    }
+    else
+    {
+                <input id="LocateRevision_ID" type="hidden" value=@Model.ID />
+    }
+</div>
