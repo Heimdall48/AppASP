@@ -8,6 +8,7 @@ namespace AppASP.Models
         [Column("Device_ID")]
         public int DeviceId { get; set; }
         public string? SerialNumber { get; set; }
+        //Test for Git
         public int Revision_ID { get; set; }
     }
 }
