@@ -8,6 +8,8 @@ using AppASP.Class;
 using System.Xml.Linq;
 using Microsoft.Data.SqlClient;
 using System.Web;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
 
 namespace AppASP.Controllers
 {
@@ -30,16 +32,65 @@ namespace AppASP.Controllers
         }
 
         public IActionResult Index()
-         {
+        {
             return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, User.Identity?.Name, db));
         }
 
-        public IActionResult Models()
+        int pageSize = 3;
+
+        private PageViewExtension<T> GetPageViewExtension<T>(int page, List<T> list, string controllername)
         {
-            ModelView v = new ModelView(db.Models.ToList(), MainMenuBuilder.CheckAccess("Модели", User.Identity?.Name, db));
+            List<T> source = list; 
+            var count = source.Count();
+            var items = source.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return new PageViewExtension<T>(new PageViewModel(count, page, pageSize, controllername), items);
+        }
+
+        public IActionResult Models(int page = 1)
+        {
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
+            ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Модели", User.Identity?.Name, db), vObject);
+                                            
             return View(v);
         }
-     
+
+        private ActionResult GetViewModels()
+        {
+            return PartialView("BuildModels", db.OrderModels.ToList());
+        }
+
+
+        public ContentResult GetModelsPageNumber(int id)
+        {
+            // Вычисляем на какой странице находится id
+            Model? vModel = (from m in db.Models
+                            where m.ModelId == id
+                            select m).FirstOrDefault();
+            int i = 0;
+            int page = 1;
+            if (vModel != null)
+                i = db.OrderModels.ToList().IndexOf(vModel) + 1;
+            if (i > 0)
+                page = (int)Math.Ceiling((decimal)i/pageSize);
+            return Content(page.ToString());
+        }
+
+        [HttpPost]
+        //Метод вызываемый по щелчку на кнопке пагинации - временный аналог GetViewModels
+        public ActionResult RefreshModels(int page = 1)
+        {
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
+            
+            return PartialView("BuildModels", vObject.items);
+        }
+
+        [HttpPost]
+        public ActionResult ModelsPagination(int page)
+        {
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
+            return PartialView("Pagination", vObject.pageViewModel);
+        }
+
         public IActionResult Devices()
         {
             return View(MainMenuBuilder.CheckAccess("Приборы", User.Identity?.Name, db));
@@ -79,15 +130,34 @@ namespace AppASP.Controllers
            return PartialView(!CheckOnDeleteModel(pModel_ID));
         }
 
+        public ActionResult CheckDeleteRevision(int pRevision_ID)
+        {
+            return PartialView(!CheckOnDeleteRevision(pRevision_ID));
+        }
+
+        private bool CheckOnDeleteRevision(int pRevision_ID)
+        {
+            //Проверка на связь с существующими приборами
+            var vKey = (from k in db.Devices
+                        where k.Revision_ID == pRevision_ID
+                        select k).FirstOrDefault();
+
+            if (vKey != null)
+                return false;
+
+            return true;
+        }
+
         public ActionResult DeleteModel(int pModel_ID)
         {
            db.DeleteModel(pModel_ID);
            return GetViewModels();
         }
 
-        public ActionResult GetViewModels()
+        public ActionResult DeleteRevision(int pRevision_ID, int pModel_ID)
         {
-            return PartialView("BuildModels", db.Models.ToList());
+            db.DeleteRevision(pRevision_ID);
+            return GetViewRevisions(pModel_ID);
         }
 
         public ActionResult SaveModel(string name, int current_ID, string description,string image)

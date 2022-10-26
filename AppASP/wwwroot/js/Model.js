@@ -32,6 +32,9 @@ exampleModal.addEventListener('show.bs.modal', event => {
     }
 });*/
 
+pgrid_function = null;
+locate_model = null;
+
 $(document).ready(
     function () {
 
@@ -196,9 +199,66 @@ $(document).ready(
             });
         }
 
+        function DeleteRevision(pIsConfirmation) {
+            //Если нет текущего, то посылаем
+            var vId = GetCurrentRevision_ID();
+            if (vId == "0" || vId === undefined) {
+                alert("Не выбрана ревизия для удаления");
+                return;
+            }
+            var vModel_ID = GetCurrentModel_ID();
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/CheckDeleteRevision',
+                data: { 'pRevision_ID': vId },
+                success: function (data) {
+                    $('#RevisionError').replaceWith(data);
+                    //Проверка флага на возможность удаления
+                    var vIsError = $("#IsRevisionError").val().trim();
+                    if (vIsError == '1') {
+                        alert('Ревизия используется. Удаление запрещено.');
+                        return;
+                    }
+
+                    if (pIsConfirmation) {
+                        var resultActionUser = confirm("Удалить ревизию?");
+                        if (!resultActionUser)
+                            return;
+                        DeleteRevision(false);
+                    }
+                    else {
+                        //Удаление
+                        $.ajax({
+                            type: 'POST',
+                            url: GetPath() + '/DeleteRevision',
+                            data: { 'pRevision_ID': vId, 'pModel_ID': vModel_ID },
+                            success: function (data) {
+                                $('#dvRevisions').replaceWith(data);
+                                PrepareRevisionGrid();
+                            },
+                            error: function (jqxhr, status, errorMsg) {
+                                alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                            }
+                        });
+                    }
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    $('#RevisionError').html('<b>Произошла ошибка в процесе проверки возможности удаления !</b>');
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                    return;
+                }
+            });
+        }
+
+
         //Удаление модели
         $('#btnModelDelete').click(function () {
             DeleteModel(true);
+        });
+
+        //Удаление модели
+        $('#btnRevisionDelete').click(function () {
+            DeleteRevision(true);
         });
 
         $("#edModelPhoto").change(function () {
@@ -299,8 +359,23 @@ $(document).ready(
                     vID = $("#LocateModel_ID").val().trim();
                     if (vID != '0') {
                         ModelEF.hide();
-                        //Необходимо переоткрыть грид и спозиционироваться
+                        /*--------------Определение страницы-----------------*/
                         $.ajax({
+                            type: 'POST',
+                            url: GetPath() + '/GetModelsPageNumber',
+                            data: { 'id': vID},
+                            success: function (data) {
+                                let vpagenumber = data;
+                                SetPagination(vpagenumber, 'Models', vID)
+                            },
+                            error: function (jqxhr, status, errorMsg) {
+                                alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                            }
+                        });
+                        /*****************************************************/
+
+                        //Необходимо переоткрыть грид и спозиционироваться
+                        /*$.ajax({
                             type: 'POST',
                             url: GetPath() + '/GetViewModels',
                             data: {},
@@ -312,7 +387,7 @@ $(document).ready(
                             error: function (jqxhr, status, errorMsg) {
                                 alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                             }
-                        });
+                        });*/
                         //----------------------------------------------------
                     }
                 },
@@ -452,4 +527,75 @@ $(document).ready(
         function GetCurrentRevision_ID() {
             return $("#Current_Revision_ID").val();
         }
+        pgrid_function = load;
+        locate_model = Locate;
     });
+
+function SetPagination(i, controllername, record_id = 0) {
+    //Скинул/установил активность
+    /*let name = "@Model.ControllerName"+i;
+    let lis = document.getElementById(name).parentElement.getElementsByTagName('li');
+    for (let li of lis) {
+        //скинуть класс
+        li.classList.remove("active");
+    }
+    document.getElementById(name).classList.toggle("active");*/
+
+    //Рабочая схема
+    /*var xhttp = new XMLHttpRequest();
+
+    xhttp.open("POST", "/Home/RefreshModels", true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    var params = "page="+i;
+    xhttp.send(params);
+
+    xhttp.onload = function(response) {
+
+        if(response.target.status == 200) {
+            document.getElementById('dvModels').outerHTML = response.target.response;
+        }
+
+     };*/
+    //fetch
+    fetch('/Home/Refresh' + controllername, {
+        method: "POST",
+        headers: { "Content-type": "application/x-www-form-urlencoded" },
+        body: 'page=' + i
+    })
+        .then(function (response) {
+            if (response.status !== 200) {
+                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                return;
+            }
+            return response.text();
+        }).
+        then(
+            function (html) {
+                document.getElementById('dv' + controllername).outerHTML = html;
+                //---------------------Вызов перестройки пагинации------------///
+                fetch('/Home/' + controllername + 'Pagination', {
+                    method: "POST",
+                    headers: { "Content-type": "application/x-www-form-urlencoded" },
+                    body: 'page=' + i
+                }).
+                    then(
+                        function (response) {
+                            if (response.status !== 200) {
+                                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                                return;
+                            }
+                            return response.text();
+                        }).then
+                    (
+                        function (html) {
+
+                            document.getElementById('divPagination' + controllername).innerHTML = html;
+                            //Вызов JQuery
+                            pgrid_function();
+                            if (record_id !== 0)
+                                locate_model(record_id);
+                        }
+                    )
+                //---------------------Вызов перестройки пагинации------------///
+            }).catch(function (err) { console.log('Fetch Error :-S', err); });
+}

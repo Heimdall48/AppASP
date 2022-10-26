@@ -4,12 +4,19 @@ namespace AppASP.ViewModels
 {
     public class ModelView
     {
-        public IEnumerable<Model> models;
+        public IEnumerable<Model>? models 
+        { 
+            get 
+            {
+                return PageViewExtension?.items;
+            } 
+        }
+        public PageViewExtension<Model>? PageViewExtension { get; set; }
         public Dictionary<string, MenuObject> menuValuePairs;
-        public ModelView(IEnumerable<Model> _models, Dictionary<string, MenuObject> _menuValuePairs)
+        public ModelView(Dictionary<string, MenuObject> _menuValuePairs, PageViewExtension<Model> _pageViewModel)
         {
-            models = _models;
             menuValuePairs = _menuValuePairs;
+            PageViewExtension = _pageViewModel;
         }
 
     }

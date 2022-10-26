@@ -20,6 +20,11 @@ namespace AppASP.Data
 
         }
 
+        public IEnumerable<Model> OrderModels
+        {
+            get { return Models.OrderBy(p=>p.Name); }
+        }
+
         public List<AccessObject> GetAccessMenuItems(string username)
         {
             Microsoft.Data.SqlClient.SqlParameter param = new Microsoft.Data.SqlClient.SqlParameter("@UserName", username);
@@ -38,6 +43,11 @@ namespace AppASP.Data
         {
             this.Database.ExecuteSqlRaw(String.Format("DELETE R FROM dbo.Revision R WHERE R.Model_ID = {0}", pModel_ID));
             this.Database.ExecuteSqlRaw(String.Format("DELETE M FROM dbo.Model M WHERE M.Model_ID = {0}", pModel_ID));
+        }
+
+        public void DeleteRevision(int pRevision_ID)
+        {
+            this.Database.ExecuteSqlRaw(String.Format("DELETE R FROM dbo.Revision R WHERE R.Revision_ID = {0}", pRevision_ID));
         }
 
         public void SaveModel(string name, int current_ID, string description, string? image, AppASP.Models.ItemModify itemmodify)

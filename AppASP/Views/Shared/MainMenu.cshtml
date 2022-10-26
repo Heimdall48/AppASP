@@ -29,7 +29,7 @@
                             continue;
                         currentclass = s.Value.IsActive ? linkclass2 : linkclass1;
                         <li class="nav-item">
-                            <a class=@currentclass asp-area="" asp-controller="Account" asp-action=@s.Value.ControllerName>@s.Key</a>
+                            <a class="@currentclass" asp-area="" asp-controller="Account" asp-action="@s.Value.ControllerName">@s.Key</a>
                         </li>
                     }
                 }
@@ -42,7 +42,7 @@
                     continue;
                 currentclass = s.Value.IsActive ? linkclass2 : linkclass1;
                 <li class="nav-item">
-                        <a class=@currentclass asp-area="" asp-controller="Home" asp-action=@s.Value.ControllerName>@s.Key</a>
+                        <a class="@currentclass" asp-area="" asp-controller="Home" asp-action="@s.Value.ControllerName">@s.Key</a>
                 </li>
             }
             </ul>

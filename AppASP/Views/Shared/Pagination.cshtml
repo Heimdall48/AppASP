@@ -1,0 +1,39 @@
+﻿@model AppASP.ViewModels.PageViewModel
+
+ <nav aria-label="Page navigation example">
+    <ul class="pagination">
+        @{
+            if (Model.TotalPages == 0)
+                return;
+
+            var l = Model.PageNumber - 1;
+            var h = Model.PageNumber + 1;
+
+            if (Model.PageNumber == 1)
+            {
+                l++;
+                h++;
+            }
+
+            if (Model.PageNumber == Model.TotalPages)
+            {
+                l--;
+                h--;
+            }
+
+            if (h > Model.TotalPages)
+                h = Model.TotalPages;
+            if (l < 1)
+                l = 1;
+             
+            for (int i = l; i <= h; i++)
+            {
+                var classname = i == Model.PageNumber ? "page-item active" : "page-item";
+                        <li class="@classname"><a class="page-link" onclick="SetPagination(@i, '@Model.ControllerName'); return false" href="#">@i</a></li>
+            }
+    }
+        
+    </ul>
+</nav>
+
+<script type="text/javascript" src="~/js/Model.js"></script>

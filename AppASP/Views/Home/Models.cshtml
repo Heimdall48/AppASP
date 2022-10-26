@@ -1,4 +1,5 @@
-﻿@model AppASP.ViewModels.ModelView 
+﻿@using AppASP.ViewModels
+@model ModelView 
 @{
     ViewData["Title"] = "Модели";
 }
@@ -11,28 +12,45 @@
 
 <div class="card">
         <div class="card-header">
-                <h5>Модели</h5>
+           <div class="d-flex">
+              <div class="p-2 flex-grow-1">
+                 <div class="p-2"><h5>Модели</h5></div>
+              </div>
+                  <div class="p-2" id="divPaginationModels">
+                    @await Html.PartialAsync("Pagination", Model.PageViewExtension?.pageViewModel)  
+              </div>
+              <div class="p-2">
                 <button id="btnModelAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
                 <button id="btnModelUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
                 <button id="btnModelDelete" type="button" class="btn btn-success">Удалить</button>
-                <div id="ModelError">
-                    <input id="IsModelError" type="hidden" value="0" />
-                </div>
+              </div>
+            </div>
+
+            <div id="ModelError">
+                <input id="IsModelError" type="hidden" value="0" />
+            </div>
         </div> 
-        @await Html.PartialAsync("BuildModels", Model.models) ;   
+        @await Html.PartialAsync("BuildModels", Model.models) 
 </div>
 
 @await Html.PartialAsync("ModelModal")
 
 <div class="card">
            <div class="card-header">
-                 <h5>Ревизии</h5>
-                    <button id="btnRevisionAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
-                    <button id="btnRevisionUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
-                    <button id="btnRevisionDelete" type="button" class="btn btn-success">Удалить</button>
-                    <div id="RevisionError">
-                      <input id="IsRevisionError" type="hidden" value="0" />
-                    </div>
+                <div class="d-flex">
+                  <div class="p-2 flex-grow-1">
+                          <h5>Ревизии</h5>
+                  </div>
+                  
+                  <div class="p-2">
+                     <button id="btnRevisionAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
+                     <button id="btnRevisionUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
+                     <button id="btnRevisionDelete" type="button" class="btn btn-success">Удалить</button>
+                  </div>
+                </div>
+                <div id="RevisionError">
+                   <input id="IsRevisionError" type="hidden" value="0" />
+                 </div>
            </div> 
            <div id="dvRevisions"></div>
 </div>
