@@ -34,6 +34,7 @@ exampleModal.addEventListener('show.bs.modal', event => {
 
 pgrid_function = null;
 locate_model = null;
+detail_function = null;
 
 $(document).ready(
     function () {
@@ -182,8 +183,11 @@ $(document).ready(
                             url: GetPath() + '/DeleteModel',
                             data: { 'pModel_ID': vId },
                             success: function (data) {
-                                $('#dvModels').replaceWith(data);
-                                PrepareModelGrid();
+                                //Переоткрываем грид на этой странице
+                                var vpagenumber = data;
+                                SetPagination(vpagenumber, 'Models')
+                                //$('#dvModels').replaceWith(data);
+                                //PrepareModelGrid();
                             },
                             error: function (jqxhr, status, errorMsg) {
                                 alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
@@ -306,6 +310,7 @@ $(document).ready(
 
         function ClearRevisions() {
             document.getElementById('dvRevisions').innerHTML = "";
+            //document.getElementById('divPaginationRevisions').innerHTML = "";
         }
 
         function PrepareRevisionGrid() {
@@ -319,7 +324,6 @@ $(document).ready(
         }
 
         function RefreshRevisions(pID) {
-            
             ClearRevisions();
 
             $.ajax({
@@ -366,6 +370,7 @@ $(document).ready(
                             data: { 'id': vID},
                             success: function (data) {
                                 let vpagenumber = data;
+                                console.log('SetPagination');
                                 SetPagination(vpagenumber, 'Models', vID)
                             },
                             error: function (jqxhr, status, errorMsg) {
@@ -457,6 +462,7 @@ $(document).ready(
             $('#model_body tr[data-id="' + pID + '"]').toggleClass('selectlines');
             //Идентификатор вида продукции
             $("#Current_Model_ID").val(pID);
+            
             RefreshDataDetail();
         }
 
@@ -527,42 +533,20 @@ $(document).ready(
         function GetCurrentRevision_ID() {
             return $("#Current_Revision_ID").val();
         }
-        pgrid_function = load;
+        pgrid_function = PrepareModelGrid;
         locate_model = Locate;
+        detail_function = RefreshDataDetail;
     });
 
 function SetPagination(i, controllername, record_id = 0) {
-    //Скинул/установил активность
-    /*let name = "@Model.ControllerName"+i;
-    let lis = document.getElementById(name).parentElement.getElementsByTagName('li');
-    for (let li of lis) {
-        //скинуть класс
-        li.classList.remove("active");
-    }
-    document.getElementById(name).classList.toggle("active");*/
 
-    //Рабочая схема
-    /*var xhttp = new XMLHttpRequest();
-
-    xhttp.open("POST", "/Home/RefreshModels", true);
-    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    var params = "page="+i;
-    xhttp.send(params);
-
-    xhttp.onload = function(response) {
-
-        if(response.target.status == 200) {
-            document.getElementById('dvModels').outerHTML = response.target.response;
-        }
-
-     };*/
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",
         headers: { "Content-type": "application/x-www-form-urlencoded" },
         body: 'page=' + i
-    })
-        .then(function (response) {
+    }).
+        then(function (response) {
             if (response.status !== 200) {
                 console.log('Looks like there was a problem. Status Code: ' + response.status);
                 return;
@@ -572,7 +556,10 @@ function SetPagination(i, controllername, record_id = 0) {
         then(
             function (html) {
                 document.getElementById('dv' + controllername).outerHTML = html;
-                //---------------------Вызов перестройки пагинации------------///
+            }).
+        then(
+            //Перестройка пагинации
+            function () {
                 fetch('/Home/' + controllername + 'Pagination', {
                     method: "POST",
                     headers: { "Content-type": "application/x-www-form-urlencoded" },
@@ -585,17 +572,47 @@ function SetPagination(i, controllername, record_id = 0) {
                                 return;
                             }
                             return response.text();
-                        }).then
-                    (
+                        }).
+                    then(
                         function (html) {
-
                             document.getElementById('divPagination' + controllername).innerHTML = html;
+                        }).
+                    then(
+                        function () {
                             //Вызов JQuery
                             pgrid_function();
-                            if (record_id !== 0)
+                            if (record_id !== 0) {
+                                console.log('Пошло позиционирование на ' + record_id);
                                 locate_model(record_id);
-                        }
-                    )
-                //---------------------Вызов перестройки пагинации------------///
-            }).catch(function (err) { console.log('Fetch Error :-S', err); });
+                            }
+                            else
+                                detail_function();
+                        }).catch(function (err) { console.log('Fetch Error :-S', err); })
+            }
+    ).catch(function (err) { console.log('Fetch Error :-S', err); });
 }
+
+//Скинул/установил активность
+/*let name = "@Model.ControllerName"+i;
+let lis = document.getElementById(name).parentElement.getElementsByTagName('li');
+for (let li of lis) {
+    //скинуть класс
+    li.classList.remove("active");
+}
+document.getElementById(name).classList.toggle("active");*/
+
+    //Рабочая схема
+/*var xhttp = new XMLHttpRequest();
+
+xhttp.open("POST", "/Home/RefreshModels", true);
+xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+var params = "page="+i;
+xhttp.send(params);
+
+xhttp.onload = function(response) {
+
+    if(response.target.status == 200) {
+        document.getElementById('dvModels').outerHTML = response.target.response;
+    }
+
+ };*/

@@ -23,14 +23,6 @@ namespace AppASP.Controllers
             db = context;
         }
 
-        public ActionResult GetViewRevisions(int pModel_ID)
-        {
-            var vRevisions = (from k in db.Revisions
-                              where k.Model_Id == pModel_ID
-                              select k);
-            return PartialView("BuildRevisions", vRevisions);
-        }
-
         public IActionResult Index()
         {
             return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, User.Identity?.Name, db));
@@ -40,8 +32,14 @@ namespace AppASP.Controllers
 
         private PageViewExtension<T> GetPageViewExtension<T>(int page, List<T> list, string controllername)
         {
+            //Если такой страницы нет то берём последнюю
             List<T> source = list; 
             var count = source.Count();
+
+            var tp = (int)Math.Ceiling(count / (double)pageSize);
+            if (page > tp)
+                page = tp;
+
             var items = source.Skip((page - 1) * pageSize).Take(pageSize).ToList();
             return new PageViewExtension<T>(new PageViewModel(count, page, pageSize, controllername), items);
         }
@@ -53,12 +51,6 @@ namespace AppASP.Controllers
                                             
             return View(v);
         }
-
-        private ActionResult GetViewModels()
-        {
-            return PartialView("BuildModels", db.OrderModels.ToList());
-        }
-
 
         public ContentResult GetModelsPageNumber(int id)
         {
@@ -82,6 +74,25 @@ namespace AppASP.Controllers
             PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
             
             return PartialView("BuildModels", vObject.items);
+        }
+
+        /*public ActionResult RefreshRevisions(int pModel_ID, int page = 1)
+        {
+            var vRevisions = (from k in db.Revisions
+                              where k.Model_Id == pModel_ID
+                              select k).OrderBy(k => k.Name);
+
+            PageViewExtension<Revision> vObject = GetPageViewExtension(page, vRevisions.ToList(), "Revisions");
+
+            return PartialView("BuildRevisions", vRevisions);
+        }*/
+
+        public ActionResult GetViewRevisions(int pModel_ID)
+        {
+            var vRevisions = (from k in db.Revisions
+                              where k.Model_Id == pModel_ID
+                              select k);
+            return PartialView("BuildRevisions", vRevisions);
         }
 
         [HttpPost]
@@ -150,8 +161,12 @@ namespace AppASP.Controllers
 
         public ActionResult DeleteModel(int pModel_ID)
         {
+            //Определяем страницу на которой данная запись
+           var pagenumber = GetModelsPageNumber(pModel_ID);
            db.DeleteModel(pModel_ID);
-           return GetViewModels();
+           return pagenumber;
+
+           //return GetViewModels();
         }
 
         public ActionResult DeleteRevision(int pRevision_ID, int pModel_ID)
