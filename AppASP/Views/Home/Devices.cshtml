@@ -1,11 +1,51 @@
-﻿@model Dictionary<string, AppASP.Models.MenuObject>
+﻿@model ModelView 
 @{
     ViewData["Title"] = "Приборы";
 }
 
 @section Header {
-@await Html.PartialAsync("MainMenu", Model)
+    @await Html.PartialAsync("MainMenu", Model.menuValuePairs)
 }
+ <div class="d-flex">
 
-<div>Тут будут Devices. И очень много</div>
+    <div class="p-2 align-self-center">
+            <label class="control-label fs-6 fw-bold" for="edModelName">Модель</label>
+    </div>
+    
+        <div class="p-2 flex-grow-1">
+         <select class="form-select" id="cbModels">
+             <option value=0 selected>Не определено</option>
+             @foreach(var item in Model.models)
+             {
+                <option value=@item.ModelId>@item.Name</option>
+             }
+        </select>
+    </div>
+   
+</div>
+
+<div class="card">
+           <div class="card-header">
+                <div class="d-flex">
+                  <div class="p-2 flex-grow-1">
+                          <h5>Приборы</h5>
+                  </div>
+                  <div class="p-2" id="divPaginationDevices"></div>
+                  <div class="p-2">
+                     <button id="btnDeviceAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
+                     <button id="btnDeviceUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
+                     <button id="btnDeviceDelete" type="button" class="btn btn-success">Удалить</button>
+                  </div>
+                </div>
+                <div id="DeviceError">
+                   <input id="IsDeviceError" type="hidden" value="0" />
+                 </div>
+           </div> 
+           <div id="dvDevices"></div>
+</div>
+@await Html.PartialAsync("DeviceModal")
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="~/js/Device.js"></script>
+
 

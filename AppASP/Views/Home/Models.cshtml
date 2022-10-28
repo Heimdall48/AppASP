@@ -17,7 +17,7 @@
                  <div class="p-2"><h5>Модели</h5></div>
               </div>
                   <div class="p-2" id="divPaginationModels">
-                    @await Html.PartialAsync("Pagination", Model.PageViewExtension?.pageViewModel)  
+                    @await Html.PartialAsync("Pagination", Model.PageViewExtension.pageViewModel)  
               </div>
               <div class="p-2">
                 <button id="btnModelAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
@@ -41,7 +41,7 @@
                   <div class="p-2 flex-grow-1">
                           <h5>Ревизии</h5>
                   </div>
-                  
+                  <div class="p-2" id="divPaginationRevisions"></div>
                   <div class="p-2">
                      <button id="btnRevisionAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
                      <button id="btnRevisionUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>

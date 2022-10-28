@@ -48,13 +48,13 @@ $(document).ready(
             $('#edModelName').focus();
         });
 
-     
         $('#exampleModal').on('hidden.bs.modal', function (event) {
             if (ModelEF == null)
                 return;
             ModelEF.dispose();
             ModelEF = null;
         });
+
 
         $('#RevisionModal').on('shown.bs.modal', function (event) {
             $('#edRevisionName').focus();
@@ -127,10 +127,9 @@ $(document).ready(
             }
         });
 
-
         var ModelEF = null;
         var RevisionEF = null;
-
+   
         function InitModelEF() {
             if (ModelEF == null) {
                 ModelEF = new bootstrap.Modal('#exampleModal', {
@@ -149,6 +148,7 @@ $(document).ready(
             RevisionEF.show();
         }
 
+       
         function DeleteModel(pIsConfirmation) {
             //Если нет текущего, то посылаем
             var vId = GetCurrentModel_ID();
@@ -254,13 +254,13 @@ $(document).ready(
             });
         }
 
-
+       
         //Удаление модели
         $('#btnModelDelete').click(function () {
             DeleteModel(true);
         });
 
-        //Удаление модели
+        //Удаление ревизии
         $('#btnRevisionDelete').click(function () {
             DeleteRevision(true);
         });
@@ -310,7 +310,7 @@ $(document).ready(
 
         function ClearRevisions() {
             document.getElementById('dvRevisions').innerHTML = "";
-            //document.getElementById('divPaginationRevisions').innerHTML = "";
+            document.getElementById('divPaginationRevisions').innerHTML = "";
         }
 
         function PrepareRevisionGrid() {
@@ -525,7 +525,7 @@ $(document).ready(
             InitRevisionEF();
         });
 
-        //Получение текущего вида продукции
+
         function GetCurrentModel_ID() {
             return $("#Current_Model_ID").val();
         }
@@ -536,6 +536,7 @@ $(document).ready(
         pgrid_function = PrepareModelGrid;
         locate_model = Locate;
         detail_function = RefreshDataDetail;
+
     });
 
 function SetPagination(i, controllername, record_id = 0) {

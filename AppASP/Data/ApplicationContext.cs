@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Xml.Linq;
+using System.Drawing.Printing;
+using AppASP.ViewModels;
 
 namespace AppASP.Data
 {
@@ -18,6 +20,39 @@ namespace AppASP.Data
             : base(options)
         {
 
+        }
+
+        public IEnumerable<DeviceExt> GetOrderDevices(int pModel_ID)
+        {
+            var items = (from d in Devices
+                         join r in Revisions on d.Revision_ID equals r.RevisionId
+                         orderby d.SerialNumber
+                         where r.Model_Id == pModel_ID
+                         select new DeviceExt ( d.DeviceId, d.SerialNumber, r.Name, r.RevisionId )
+                         );
+
+            return (IEnumerable<DeviceExt>)items ;
+        }
+
+        public IEnumerable<Revision> GetOrderRevisions(int pModel_ID)
+        {
+          return Revisions.Where(o=>o.Model_Id==pModel_ID).OrderBy(p => p.Name); 
+        }
+
+        public int GetModelPageNumber(int pModel_ID)
+        {
+            int pageSize = PageViewExtension<int>.PageSize;
+            // Вычисляем на какой странице находится id
+            Model? vModel = (from m in Models
+                             where m.ModelId == pModel_ID
+                             select m).FirstOrDefault();
+            int i = 0;
+            int page = 1;
+            if (vModel != null)
+                i = OrderModels.ToList().IndexOf(vModel) + 1;
+            if (i > 0)
+                page = (int)Math.Ceiling((decimal)i / pageSize);
+            return page;
         }
 
         public IEnumerable<Model> OrderModels
@@ -48,6 +83,11 @@ namespace AppASP.Data
         public void DeleteRevision(int pRevision_ID)
         {
             this.Database.ExecuteSqlRaw(String.Format("DELETE R FROM dbo.Revision R WHERE R.Revision_ID = {0}", pRevision_ID));
+        }
+
+        public void DeleteDevice(int pDevice_ID)
+        {
+            this.Database.ExecuteSqlRaw(String.Format("DELETE R FROM dbo.Device R WHERE R.Device_ID = {0}", pDevice_ID));
         }
 
         public void SaveModel(string name, int current_ID, string description, string? image, AppASP.Models.ItemModify itemmodify)
@@ -96,6 +136,31 @@ namespace AppASP.Data
                 this.Database.ExecuteSqlRaw(@"UPDATE [dbo].[Revision]
                                               SET [Name] = @Name
                                               WHERE Revision_ID = @Revision_ID", vName, vRevision_ID);
+            }
+        }
+
+        public void SaveDevice(string sn, int current_ID, int revision_ID, AppASP.Models.ItemModify itemmodify)
+        {
+            var vSerialNumber = new SqlParameter("@SerialNumber", sn);
+            var vRevision_ID = new SqlParameter("@Revision_ID", revision_ID);
+
+            if (current_ID == 0)
+            {
+                
+                SqlParameter vParameter = new SqlParameter("@Device_ID", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, true, 0, 0, string.Empty, System.Data.DataRowVersion.Default, DBNull.Value);
+                this.Database.ExecuteSqlRaw(@"INSERT INTO [dbo].[Device] ([SerialNumber],Revision_ID) 
+                                              VALUES (@SerialNumber,@Revision_ID)
+                                              SELECT @Device_ID = SCOPE_IDENTITY()", vSerialNumber, vRevision_ID, vParameter);
+                itemmodify.ID = Convert.ToInt32(vParameter.Value);
+            }
+            else
+            {
+                var vDevice_ID = new SqlParameter("@Device_ID", current_ID);
+
+                itemmodify.ID = current_ID;
+                this.Database.ExecuteSqlRaw(@"UPDATE [dbo].[Device]
+                                              SET [SerialNumber] = @SerialNumber, [Revision_ID] = @Revision_ID
+                                              WHERE Device_ID = @Device_ID", vSerialNumber, vRevision_ID, vDevice_ID);
             }
         }
 

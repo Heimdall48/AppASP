@@ -9,6 +9,8 @@ using System.Xml.Linq;
 using Microsoft.Data.SqlClient;
 using System.Web;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.CodeAnalysis.Options;
+using Newtonsoft.Json.Linq;
 
 
 namespace AppASP.Controllers
@@ -28,10 +30,11 @@ namespace AppASP.Controllers
             return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, User.Identity?.Name, db));
         }
 
-        int pageSize = 3;
+        //int pageSize = 3;
 
         private PageViewExtension<T> GetPageViewExtension<T>(int page, List<T> list, string controllername)
         {
+            int pageSize = PageViewExtension<T>.PageSize;
             //Если такой страницы нет то берём последнюю
             List<T> source = list; 
             var count = source.Count();
@@ -54,17 +57,7 @@ namespace AppASP.Controllers
 
         public ContentResult GetModelsPageNumber(int id)
         {
-            // Вычисляем на какой странице находится id
-            Model? vModel = (from m in db.Models
-                            where m.ModelId == id
-                            select m).FirstOrDefault();
-            int i = 0;
-            int page = 1;
-            if (vModel != null)
-                i = db.OrderModels.ToList().IndexOf(vModel) + 1;
-            if (i > 0)
-                page = (int)Math.Ceiling((decimal)i/pageSize);
-            return Content(page.ToString());
+            return Content(db.GetModelPageNumber(id).ToString());
         }
 
         [HttpPost]
@@ -76,23 +69,26 @@ namespace AppASP.Controllers
             return PartialView("BuildModels", vObject.items);
         }
 
-        /*public ActionResult RefreshRevisions(int pModel_ID, int page = 1)
-        {
-            var vRevisions = (from k in db.Revisions
-                              where k.Model_Id == pModel_ID
-                              select k).OrderBy(k => k.Name);
-
-            PageViewExtension<Revision> vObject = GetPageViewExtension(page, vRevisions.ToList(), "Revisions");
-
-            return PartialView("BuildRevisions", vRevisions);
-        }*/
-
         public ActionResult GetViewRevisions(int pModel_ID)
         {
-            var vRevisions = (from k in db.Revisions
-                              where k.Model_Id == pModel_ID
-                              select k);
-            return PartialView("BuildRevisions", vRevisions);
+            return PartialView("BuildRevisions", db.GetOrderRevisions(pModel_ID));
+        }
+
+        public ActionResult GetRevisionsByModel(int pModel_ID)
+        {
+            IEnumerable<Revision> vItems = db.GetOrderRevisions(pModel_ID);
+            string vResult = @"<select class='form-select' id='cbRevisions'>";
+            foreach (var item in vItems)
+            {
+                vResult += $"<option value={item.RevisionId}>{item.Name}</option>";
+            }
+            vResult += "</select>";
+            return Content(vResult);
+        }
+
+        public ActionResult GetViewDevices(int pModel_ID)
+        {
+            return PartialView("BuildDevices", db.GetOrderDevices(pModel_ID));
         }
 
         [HttpPost]
@@ -104,7 +100,11 @@ namespace AppASP.Controllers
 
         public IActionResult Devices()
         {
-            return View(MainMenuBuilder.CheckAccess("Приборы", User.Identity?.Name, db));
+            PageViewExtension<Model> vObject = GetPageViewExtension(1, db.OrderModels.ToList(), "Models");
+            vObject.items = db.OrderModels.ToList();
+            ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Приборы", User.Identity?.Name, db), vObject);
+
+            return View(v);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -165,8 +165,6 @@ namespace AppASP.Controllers
            var pagenumber = GetModelsPageNumber(pModel_ID);
            db.DeleteModel(pModel_ID);
            return pagenumber;
-
-           //return GetViewModels();
         }
 
         public ActionResult DeleteRevision(int pRevision_ID, int pModel_ID)
@@ -204,6 +202,30 @@ namespace AppASP.Controllers
                 db.SaveRevision(name, current_ID, model_ID, vModelModify);
             }
             return PartialView(vModelModify);
+        }
+
+        public ActionResult SaveDevice(string sn, int current_ID, int model_ID, int revision_ID)
+        {
+            sn = HttpUtility.UrlDecode(sn);
+
+            AppASP.Models.ItemModify vModelModify = new Models.ItemModify();
+
+            var vDevice = (from d in db.Devices
+                                        join r in db.Revisions
+                                    on d.Revision_ID equals r.RevisionId
+                             where d.DeviceId != current_ID && d.SerialNumber == sn && r.Model_Id == model_ID select d).FirstOrDefault();
+            if (vDevice == null)
+            {
+                vModelModify.IsExists = false;
+                db.SaveDevice(sn, current_ID, revision_ID, vModelModify);
+            }
+            return PartialView(vModelModify);
+        }
+
+        public ActionResult DeleteDevice(int pDevice_ID, int pModel_ID)
+        {
+            db.DeleteDevice(pDevice_ID);
+            return GetViewDevices(pModel_ID);
         }
 
     }

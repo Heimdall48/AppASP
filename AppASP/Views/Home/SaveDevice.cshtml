@@ -1,0 +1,12 @@
+﻿@model AppASP.Models.ItemModify
+<div id="divSaveDeviceMessage">
+    @if (Model.IsExists)
+    {
+        <span id="SaveErrorDevice" class="ErrorClass">Прибор с таким номером в модели уже существует</span>
+        <input id="LocateDevice_ID" type="hidden" value=0 />
+    }
+    else
+    {
+        <input id="LocateDevice_ID" type="hidden" value=@Model.ID />
+    }
+</div>
