@@ -1,6 +1,47 @@
 ﻿$(document).ready(
     function () {
 
+        //Класс определяющий состояние прибора
+        class DeviceClass {
+            ID = 0;
+            Operation = null;//Возможные значения кроме null - U,I
+            DeviceEF = null;
+
+            ClearDevice() {
+                this.ID = 0;
+                this.Operation = null;
+            }
+            SetInsertOperation(){
+                this.Operation = 'I';
+            }
+
+            SetUpdateOperation() {
+                this.Operation = 'U';
+            }
+
+            IsUpdateOperation() { return this.Operation == 'U'; }
+            IsInsertOperation() { return this.Operation == 'I'; }
+
+            DestroyModalForm() {
+                if (this.DeviceEF == null)
+                    return;
+                this.DeviceEF.dispose();
+                this.DeviceEF = null;
+            }
+
+            InitDeviceEF() {
+                if (this.DeviceEF == null) {
+                    this.DeviceEF = new bootstrap.Modal('#DeviceModal', {
+                        keyboard: true
+                    })
+                }
+                this.DeviceEF.show();
+            }
+        }
+
+        //Через этот объект, а не через всякие теги будем пытаться работать
+        let vDevice = new DeviceClass();
+
         function GetPath() {
             var vPath = $('#MyUrl').val();
             return vPath;
@@ -11,37 +52,41 @@
         });
 
         $('#DeviceModal').on('hidden.bs.modal', function (event) {
-            if (DeviceEF == null)
-                return;
-            DeviceEF.dispose();
-            DeviceEF = null;
+            vDevice.DestroyModalForm();
         });
-
-        var DeviceEF = null;
 
         $('#DeviceModal').on('show.bs.modal', function (event) {
             //Прячем сообщение об ошибках
             var ErrorSpan = document.getElementById("SaveErrorDevice");
             if (ErrorSpan != null)
                 ErrorSpan.style.display = "none";
+
+            if (!vDevice.Operation) {
+                alert('Ошибка с определением типа операции над прибором!');
+                return;
+            }
+
             //Проверяем что щас делаем
-            var vID = $("#Device_ID").val().trim();
-            if (vID == 0) {
+            if (vDevice.IsInsertOperation()) {
                 $(this).find('#DeviceModalLabel').text("Добавить прибор");
                 $(this).find('#edSerialNumber').val("");
                 $(this).find('#cbRevisions').val(0);
             }
             else {
                 $(this).find('#DeviceModalLabel').text("Изменить прибор");
-                $(this).find('#edSerialNumber').val($('#device_body tr[data-id="' + vID + '"]>td:eq(0)>p').text().trim());
-                $(this).find('#cbRevisions').val($('#device_body tr[data-id="' + vID + '"]').attr('data-revid'));
+                $(this).find('#edSerialNumber').val($('#device_body tr[data-id="' + vDevice.ID + '"]>td:eq(0)>p').text().trim());
+                $(this).find('#cbRevisions').val($('#device_body tr[data-id="' + vDevice.ID + '"]').attr('data-revid'));
             }
         });
 
         function LocateDevice(pID) {
             $('#device_body tr').removeClass('selectlines');
             $('#device_body tr[data-id="' + pID + '"]').toggleClass('selectlines');
-            $("#Current_Device_ID").val(pID);
+
+            if ($('#device_body tr[data-id="' + pID + '"]'))
+                vDevice.ID = pID;
+            else
+                vDevice.ID = 0;
         }
 
         $('#btnDeviceSave').click(function () {
@@ -58,20 +103,19 @@
                return;
            }
 
-           var vID = $("#Device_ID").val().trim();
            var vModel_ID = GetDeviceModel_ID().trim();
 
            $.ajax({
                type: 'POST',
                url: GetPath() + '/SaveDevice',
-               data: { 'sn': encodeURIComponent(vName), 'current_ID': vID, 'model_ID': vModel_ID, 'revision_ID': vRevision_ID },
+               data: { 'sn': encodeURIComponent(vName), 'current_ID': vDevice.ID, 'model_ID': vModel_ID, 'revision_ID': vRevision_ID },
                success: function (data) {
                    //Текущее представление надо перестроить
                    $('#divSaveDeviceMessage').replaceWith(data);
                    //Если ошибок не существует, то закрываем форму. Здесь 0 - признак ошибки
                    vID = $("#LocateDevice_ID").val().trim();
                    if (vID != '0') {
-                       DeviceEF.hide();
+                       vDevice.DeviceEF.hide();
                        //Необходимо переоткрыть грид и спозиционироваться
                        $.ajax({
                            type: 'POST',
@@ -109,8 +153,9 @@
                 alert("Не выбран прибор для удаления");
                 return;
             }
-          
-            var resultActionUser = confirm("Удалить прибор?");
+            let vSN = $('#device_body tr[data-id="' + vDevice.ID + '"]>td:eq(0)>p').text().trim();
+
+            var resultActionUser = confirm(`Удалить прибор <${vSN}>?`);
             if (!resultActionUser)
                 return;
 
@@ -123,6 +168,7 @@
                 data: { 'pDevice_ID': vId, 'pModel_ID': vModel_ID },
                 success: function (data) {
                     $('#dvDevices').replaceWith(data);
+                    vDevice.ClearDevice();
                     PrepareDeviceGrid();
                 },
                 error: function (jqxhr, status, errorMsg) {
@@ -136,26 +182,18 @@
         }
 
         function GetCurrentDevice_ID() {
-            return $("#Current_Device_ID").val();
+            return vDevice.ID;
         }
 
-        function InitDeviceEF() {
-            if (DeviceEF == null) {
-                DeviceEF = new bootstrap.Modal('#DeviceModal', {
-                    keyboard: true
-                })
-            }
-            DeviceEF.show();
-        }
-
+       
         $('#btnDeviceAdd').click(function () {
             var vId = GetDeviceModel_ID();
             if (vId == "0" || vId === undefined) {
                 alert("Не выбрана текущая модель");
                 return;
             }
-            $("#Device_ID").val(0);
-            InitDeviceEF();
+            vDevice.SetInsertOperation(); 
+            vDevice.InitDeviceEF();
         });
 
         $('#btnDeviceUpdate').click(function () {
@@ -167,20 +205,21 @@
                 return;
             }
 
-            $("#Device_ID").val(vId);
-            InitDeviceEF();
+            vDevice.SetUpdateOperation();
+            vDevice.InitDeviceEF();
         });
 
         $('#cbModels').change(
             function () {
+                Model_ID = $(this).val();
                 //Загрузка приборов модели
-                RefreshDevices($(this).val());
+                RefreshDevices(Model_ID);
 
                 //Загрузка ревизий модели параллельным потоком
                 $.ajax({
                     type: 'POST',
                     url: GetPath() + '/GetRevisionsByModel',
-                    data: { 'pModel_ID': $(this).val() },
+                    data: { 'pModel_ID': Model_ID },
                     success: function (data) {
                         $('#cbRevisions').replaceWith(data);
                     },
@@ -188,11 +227,11 @@
                         alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                     }
                 });
-
             }
         );
 
         function ClearDevices() {
+            vDevice.ClearDevice();
             document.getElementById('dvDevices').innerHTML = "";
             document.getElementById('divPaginationDevices').innerHTML = "";
         }
@@ -203,7 +242,7 @@
                 $(this).toggleClass('selectlines');
                 //Идентификатор вида продукции
                 var vDevice_ID = $(this).data("id");
-                $("#Current_Device_ID").val(vDevice_ID);
+                vDevice.ID = vDevice_ID;
             });
         }
 

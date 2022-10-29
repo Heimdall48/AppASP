@@ -167,6 +167,7 @@ namespace AppASP.Controllers
            return pagenumber;
         }
 
+        [HttpPost]
         public ActionResult DeleteRevision(int pRevision_ID, int pModel_ID)
         {
             db.DeleteRevision(pRevision_ID);
@@ -222,6 +223,7 @@ namespace AppASP.Controllers
             return PartialView(vModelModify);
         }
 
+        [HttpPost]
         public ActionResult DeleteDevice(int pDevice_ID, int pModel_ID)
         {
             db.DeleteDevice(pDevice_ID);
