@@ -30,11 +30,9 @@ namespace AppASP.Controllers
             return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, User.Identity?.Name, db));
         }
 
-        //int pageSize = 3;
 
-        private PageViewExtension<T> GetPageViewExtension<T>(int page, List<T> list, string controllername)
+        private PageViewExtension<T> GetPageViewExtension<T>(int page, List<T> list, int pageSize = 3)
         {
-            int pageSize = PageViewExtension<T>.PageSize;
             //Если такой страницы нет то берём последнюю
             List<T> source = list; 
             var count = source.Count();
@@ -44,12 +42,12 @@ namespace AppASP.Controllers
                 page = tp;
 
             var items = source.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            return new PageViewExtension<T>(new PageViewModel(count, page, pageSize, controllername), items);
+            return new PageViewExtension<T>(new PageViewModel(count, page, pageSize), items);
         }
 
         public IActionResult Models(int page = 1)
         {
-            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), 3);
             ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Модели", User.Identity?.Name, db), vObject);
                                             
             return View(v);
@@ -64,7 +62,7 @@ namespace AppASP.Controllers
         //Метод вызываемый по щелчку на кнопке пагинации - временный аналог GetViewModels
         public ActionResult RefreshModels(int page = 1)
         {
-            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList());
             
             return PartialView("BuildModels", vObject.items);
         }
@@ -86,26 +84,52 @@ namespace AppASP.Controllers
             return Content(vResult);
         }
 
-        public ActionResult GetViewDevices(int pModel_ID)
-        {
-            return PartialView("BuildDevices", db.GetOrderDevices(pModel_ID));
-        }
-
         [HttpPost]
         public ActionResult ModelsPagination(int page)
         {
-            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), "Models");
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList());
             return PartialView("Pagination", vObject.pageViewModel);
         }
 
+        //*************************Вызывается при обращении страницы Приборы непосредственно********************************
         public IActionResult Devices()
         {
-            PageViewExtension<Model> vObject = GetPageViewExtension(1, db.OrderModels.ToList(), "Models");
+            PageViewExtension<Model> vObject = GetPageViewExtension(1, db.OrderModels.ToList());
+            //Выводим весь список моделей в комбобокс
             vObject.items = db.OrderModels.ToList();
             ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Приборы", User.Identity?.Name, db), vObject);
 
             return View(v);
         }
+
+        public IActionResult RefreshDevices(int pModel_ID, int page = 1)
+        {
+            PageViewExtension<DeviceExt> vObject = GetPageViewExtension(page, db.GetOrderDevices(pModel_ID).ToList(), 8);
+            return PartialView("BuildDevices", vObject.items);
+        }
+
+        [HttpPost]
+        public ActionResult DevicesPagination(int pModel_ID, int page = 1)
+        {
+            PageViewExtension<DeviceExt> vObject = GetPageViewExtension(page, db.GetOrderDevices(pModel_ID).ToList(), 8);
+            return PartialView("DevicesPagination", vObject.pageViewModel);
+        }
+
+        //Возврат номера страницы, на ктором находится искомый прибор
+        public ContentResult GetDevicePageNumber(int pModel_ID, int pDevice_ID)
+        {
+            return Content(db.GetDevicePageNumber(pModel_ID, pDevice_ID).ToString());
+        }
+
+        [HttpPost]
+        public ActionResult DeleteDevice(int pDevice_ID, int pModel_ID)
+        {
+            var pagenumber = GetDevicePageNumber(pModel_ID, pDevice_ID);
+            db.DeleteDevice(pDevice_ID);
+            return pagenumber;
+        }
+
+        //******************************************************************************************************************
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
@@ -221,13 +245,6 @@ namespace AppASP.Controllers
                 db.SaveDevice(sn, current_ID, revision_ID, vModelModify);
             }
             return PartialView(vModelModify);
-        }
-
-        [HttpPost]
-        public ActionResult DeleteDevice(int pDevice_ID, int pModel_ID)
-        {
-            db.DeleteDevice(pDevice_ID);
-            return GetViewDevices(pModel_ID);
         }
 
     }
