@@ -7,6 +7,8 @@ using Microsoft.Extensions.Options;
 using System.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDistributedMemoryCache();// добавляем IDistributedMemoryCache
+builder.Services.AddSession();  // добавляем сервисы сессии
 
 #region "настройка identity"
 // получаем строку подключения из файла конфигурации
@@ -23,9 +25,9 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(opts => {
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
 var app = builder.Build();
 
+app.UseSession();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

@@ -123,7 +123,7 @@ $(document).ready(
             }
             else {
                 $(this).find('#RevisionModalLabel').text("Изменить ревизию");
-                $(this).find('#edRevisionName').val($('#revision_body tr[data-id="' + vID + '"]>td:eq(1)>p').text().trim());
+                $(this).find('#edRevisionName').val($('#revision_body tr[data-id="' + vID + '"]>td:eq(0)>p').text().trim());
             }
         });
 
@@ -237,8 +237,8 @@ $(document).ready(
                             url: GetPath() + '/DeleteRevision',
                             data: { 'pRevision_ID': vId, 'pModel_ID': vModel_ID },
                             success: function (data) {
-                                $('#dvRevisions').replaceWith(data);
-                                PrepareRevisionGrid();
+                                var vpagenumber = data;
+                                RefreshRevisionPagination(vpagenumber);
                             },
                             error: function (jqxhr, status, errorMsg) {
                                 alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
@@ -254,7 +254,6 @@ $(document).ready(
             });
         }
 
-       
         //Удаление модели
         $('#btnModelDelete').click(function () {
             DeleteModel(true);
@@ -300,14 +299,6 @@ $(document).ready(
             }
         }
 
-        function RefreshDataDetail() {
-            var vId = GetCurrentModel_ID();
-            if (vId == "0" || vId === undefined) {
-                vId = 0;
-            }
-            RefreshRevisions(vId);
-        }
-
         function ClearRevisions() {
             document.getElementById('dvRevisions').innerHTML = "";
             document.getElementById('divPaginationRevisions').innerHTML = "";
@@ -320,23 +311,6 @@ $(document).ready(
                 //Идентификатор вида продукции
                 var vRevision_ID = $(this).data("id");
                 $("#Current_Revision_ID").val(vRevision_ID);
-            });
-        }
-
-        function RefreshRevisions(pID) {
-            ClearRevisions();
-
-            $.ajax({
-                type: 'POST',
-                url: GetPath() + '/GetViewRevisions',
-                data: { 'pModel_ID': pID },
-                success: function (data) {
-                    $('#dvRevisions').replaceWith(data);
-                    PrepareRevisionGrid();
-                },
-                error: function (jqxhr, status, errorMsg) {
-                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
-                }
             });
         }
 
@@ -426,8 +400,22 @@ $(document).ready(
                     vID = $("#LocateRevision_ID").val().trim();
                     if (vID != '0') {
                         RevisionEF.hide();
-                        //Необходимо переоткрыть грид и спозиционироваться
+
                         $.ajax({
+                            type: 'POST',
+                            url: GetPath() + '/GetRevisionPageNumber',
+                            data: { 'pModel_ID': vModel_ID, 'pRevision_ID': vID },
+                            success: function (data) {
+                                let pagenumber = data;
+                                //Необходимо переоткрыть страницу и спозиционироваться
+                                RefreshRevisionPagination(pagenumber, vID);
+                            },
+                            error: function (jqxhr, status, errorMsg) {
+                                alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                            }
+                        });
+                        //Необходимо переоткрыть грид и спозиционироваться
+                        /*$.ajax({
                             type: 'POST',
                             url: GetPath() + '/GetViewRevisions',
                             data: { 'pModel_ID': vModel_ID },
@@ -439,8 +427,8 @@ $(document).ready(
                             error: function (jqxhr, status, errorMsg) {
                                 alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                             }
-                        });
-                        //----------------------------------------------------
+                        });*/
+                        
                     }
                 },
                 error: function (jqxhr, status, errorMsg) {
@@ -454,7 +442,7 @@ $(document).ready(
 
         function load() {
             PrepareModelGrid();
-            RefreshDataDetail();
+            RefreshRevisionPagination();
         }
 
         function Locate(pID) {
@@ -463,7 +451,7 @@ $(document).ready(
             //Идентификатор вида продукции
             $("#Current_Model_ID").val(pID);
             
-            RefreshDataDetail();
+            RefreshRevisionPagination();
         }
 
         function PrepareModelGrid() {
@@ -475,7 +463,7 @@ $(document).ready(
                 //Идентификатор вида продукции
                 var vModel_ID = $(this).data("id");
                 $("#Current_Model_ID").val(vModel_ID);
-                RefreshDataDetail();
+                RefreshRevisionPagination();
             });
         }
 
@@ -525,6 +513,53 @@ $(document).ready(
             InitRevisionEF();
         });
 
+        //Для пагинации ревизий
+        function RefreshRevisionPagination(page = 1, record_id = 0) {
+            //Чистим пагинацию и набор приборов
+            ClearRevisions();
+
+            Model_ID = GetCurrentModel_ID();
+            if (Model_ID == "0" || Model_ID === undefined) {
+                Model_ID = 0;
+            }
+
+            //**********************перестроение пагинации************************
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/RevisionPagination',
+                data: { 'pModel_ID': Model_ID, 'page': page },
+                success: function (data) {
+                    $('#divPaginationRevisions').html(data);
+                    //На все кнопки надо повесить обработчик
+                    $('.device-page').click(function (e) {
+                        let page = e.target.innerHTML;
+                        RefreshRevisionPagination(page);
+                        return false;
+                    });
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                }
+            });
+            //********************************************************************* 
+
+            //Вывод набора ревизий на страницу
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/RefreshRevisions',
+                data: { 'pModel_ID': Model_ID, 'page': page },
+                success: function (data) {
+                    $('#dvRevisions').replaceWith(data);
+                    PrepareRevisionGrid();
+                    if (record_id !== 0)
+                        LocateRevision(record_id);
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                }
+            });
+        }
+
 
         function GetCurrentModel_ID() {
             return $("#Current_Model_ID").val();
@@ -535,7 +570,7 @@ $(document).ready(
         }
         pgrid_function = PrepareModelGrid;
         locate_model = Locate;
-        detail_function = RefreshDataDetail;
+        detail_function = RefreshRevisionPagination;
 
     });
 
@@ -592,28 +627,3 @@ function SetPagination(i, controllername, record_id = 0) {
             }
     ).catch(function (err) { console.log('Fetch Error :-S', err); });
 }
-
-//Скинул/установил активность
-/*let name = "@Model.ControllerName"+i;
-let lis = document.getElementById(name).parentElement.getElementsByTagName('li');
-for (let li of lis) {
-    //скинуть класс
-    li.classList.remove("active");
-}
-document.getElementById(name).classList.toggle("active");*/
-
-    //Рабочая схема
-/*var xhttp = new XMLHttpRequest();
-
-xhttp.open("POST", "/Home/RefreshModels", true);
-xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-var params = "page="+i;
-xhttp.send(params);
-
-xhttp.onload = function(response) {
-
-    if(response.target.status == 200) {
-        document.getElementById('dvModels').outerHTML = response.target.response;
-    }
-
- };*/

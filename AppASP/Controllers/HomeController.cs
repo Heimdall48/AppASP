@@ -11,6 +11,8 @@ using System.Web;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.CodeAnalysis.Options;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Http;
+using System;
 
 
 namespace AppASP.Controllers
@@ -27,9 +29,37 @@ namespace AppASP.Controllers
 
         public IActionResult Index()
         {
-            return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, User.Identity?.Name, db));
+            //Проверка прав только если пользователь аавторизован
+            return View(MainMenuBuilder.CheckAccess(MainMenuBuilder.About, GetAccessObject()));
         }
 
+        //Записываем в сессию объект с правами
+#nullable disable
+        private List<AccessObject> GetAccessObject()
+        {
+            if (User.Identity?.Name == null)
+                return null;
+
+            if (HttpContext.Session.Keys.Contains("AccessObject"))
+                return HttpContext.Session.Get<List<AccessObject>>("AccessObject");
+            List<AccessObject> vList = db.GetAccessMenuItems(User.Identity.Name);
+            HttpContext.Session.Set<List<AccessObject>>("AccessObject", vList);
+            return vList;
+        }
+
+        void InitViewBag()
+        {
+            List<AccessObject> vList = GetAccessObject();
+            
+            ViewData["MODEL_UPDATE"] = false;
+            ViewData["DEVICE_UPDATE"] = false;
+            foreach (var item in vList)
+            {
+                if (item.Code == "MODEL_UPDATE" || item.Code == "DEVICE_UPDATE")
+                    ViewData[item.Code] = true; 
+            }
+        }
+#nullable restore
 
         private PageViewExtension<T> GetPageViewExtension<T>(int page, List<T> list, int pageSize = 3)
         {
@@ -48,8 +78,8 @@ namespace AppASP.Controllers
         public IActionResult Models(int page = 1)
         {
             PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList(), 3);
-            ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Модели", User.Identity?.Name, db), vObject);
-                                            
+            ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Модели", GetAccessObject()), vObject);
+            InitViewBag();
             return View(v);
         }
 
@@ -66,12 +96,69 @@ namespace AppASP.Controllers
             
             return PartialView("BuildModels", vObject.items);
         }
-
-        public ActionResult GetViewRevisions(int pModel_ID)
+        [HttpPost]
+        public ActionResult ModelsPagination(int page)
         {
-            return PartialView("BuildRevisions", db.GetOrderRevisions(pModel_ID));
+            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList());
+            return PartialView("Pagination", vObject.pageViewModel);
         }
 
+        /********************************************Ревизии************************************************/
+        public ActionResult CheckDeleteRevision(int pRevision_ID)
+        {
+            return PartialView(!CheckOnDeleteRevision(pRevision_ID));
+        }
+
+        private bool CheckOnDeleteRevision(int pRevision_ID)
+        {
+            //Проверка на связь с существующими приборами
+            var vKey = (from k in db.Devices
+                        where k.Revision_ID == pRevision_ID
+                        select k).FirstOrDefault();
+
+            if (vKey != null)
+                return false;
+
+            return true;
+        }
+
+        [HttpPost]
+        public ActionResult DeleteRevision(int pRevision_ID, int pModel_ID)
+        {
+            var pagenumber = GetRevisionPageNumber(pModel_ID, pRevision_ID);
+            db.DeleteRevision(pRevision_ID);
+            return pagenumber;
+        }
+        //-------------------------доработки по ревизиям------------------------------------
+        public IActionResult RefreshRevisions(int pModel_ID, int page = 1)
+        {
+            PageViewExtension<Revision> vObject = GetPageViewExtension(page, db.GetOrderRevisions(pModel_ID).ToList(), 4);
+            return PartialView("BuildRevisions", vObject.items);
+        }
+
+        [HttpPost]
+        public ActionResult RevisionPagination(int pModel_ID, int page = 1)
+        {
+            PageViewExtension<Revision> vObject = GetPageViewExtension(page, db.GetOrderRevisions(pModel_ID).ToList(), 4);
+            return PartialView("DevicesPagination", vObject.pageViewModel);
+        }
+
+        public ContentResult GetRevisionPageNumber(int pModel_ID, int pRevision_ID)
+        {
+            return Content(db.GetRevisionPageNumber(pModel_ID, pRevision_ID).ToString());
+        }
+
+        //****************************************** Приборы непосредственно********************************
+        #region "Приборы"
+        public IActionResult Devices()
+        {
+             PageViewExtension<Model> vObject = GetPageViewExtension(1, db.OrderModels.ToList());
+            //Выводим весь список моделей в комбобокс
+            vObject.items = db.OrderModels.ToList();
+            ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Приборы", GetAccessObject()), vObject);
+            InitViewBag();
+            return View(v);
+        }
         public ActionResult GetRevisionsByModel(int pModel_ID)
         {
             IEnumerable<Revision> vItems = db.GetOrderRevisions(pModel_ID);
@@ -82,24 +169,6 @@ namespace AppASP.Controllers
             }
             vResult += "</select>";
             return Content(vResult);
-        }
-
-        [HttpPost]
-        public ActionResult ModelsPagination(int page)
-        {
-            PageViewExtension<Model> vObject = GetPageViewExtension(page, db.OrderModels.ToList());
-            return PartialView("Pagination", vObject.pageViewModel);
-        }
-
-        //*************************Вызывается при обращении страницы Приборы непосредственно********************************
-        public IActionResult Devices()
-        {
-            PageViewExtension<Model> vObject = GetPageViewExtension(1, db.OrderModels.ToList());
-            //Выводим весь список моделей в комбобокс
-            vObject.items = db.OrderModels.ToList();
-            ModelView v = new ModelView(MainMenuBuilder.CheckAccess("Приборы", User.Identity?.Name, db), vObject);
-
-            return View(v);
         }
 
         public IActionResult RefreshDevices(int pModel_ID, int page = 1)
@@ -128,7 +197,7 @@ namespace AppASP.Controllers
             db.DeleteDevice(pDevice_ID);
             return pagenumber;
         }
-
+        #endregion
         //******************************************************************************************************************
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -165,37 +234,12 @@ namespace AppASP.Controllers
            return PartialView(!CheckOnDeleteModel(pModel_ID));
         }
 
-        public ActionResult CheckDeleteRevision(int pRevision_ID)
-        {
-            return PartialView(!CheckOnDeleteRevision(pRevision_ID));
-        }
-
-        private bool CheckOnDeleteRevision(int pRevision_ID)
-        {
-            //Проверка на связь с существующими приборами
-            var vKey = (from k in db.Devices
-                        where k.Revision_ID == pRevision_ID
-                        select k).FirstOrDefault();
-
-            if (vKey != null)
-                return false;
-
-            return true;
-        }
-
         public ActionResult DeleteModel(int pModel_ID)
         {
             //Определяем страницу на которой данная запись
            var pagenumber = GetModelsPageNumber(pModel_ID);
            db.DeleteModel(pModel_ID);
            return pagenumber;
-        }
-
-        [HttpPost]
-        public ActionResult DeleteRevision(int pRevision_ID, int pModel_ID)
-        {
-            db.DeleteRevision(pRevision_ID);
-            return GetViewRevisions(pModel_ID);
         }
 
         public ActionResult SaveModel(string name, int current_ID, string description,string image)

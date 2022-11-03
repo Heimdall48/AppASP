@@ -40,6 +40,7 @@ namespace AppASP.Controllers
                 {
                     // установка куки
                     await _signInManager.SignInAsync(user, false);
+                    ClearSession();
                     return RedirectToAction("Index", "Home");
                 }
                 else
@@ -55,7 +56,7 @@ namespace AppASP.Controllers
 
         public IActionResult Login()
         {
-          
+            ClearSession();
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Index", "Home");
@@ -82,11 +83,17 @@ namespace AppASP.Controllers
             return View(loginModel);
         }
 
+        private void ClearSession()
+        { 
+            HttpContext.Session.Remove("AccessObject"); 
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
+            ClearSession();
             return RedirectToAction("Index", "Home");
         }
 

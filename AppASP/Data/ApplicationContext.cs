@@ -77,6 +77,28 @@ namespace AppASP.Data
             return page;
         }
 
+        public int GetRevisionPageNumber(int pModel_ID, int pRevision_ID)
+        {
+            int pageSize = 4;
+            // Вычисляем на какой странице находится id
+            Revision? vRevision = (from r in Revisions
+                                    where r.RevisionId == pRevision_ID
+                                     select r).FirstOrDefault();
+            int i = 0;
+            int page = 1;
+
+            if (vRevision != null)
+                i = (from r in Revisions 
+                     orderby r.Name
+                     where r.Model_Id == pModel_ID
+                     select r).ToList().IndexOf(vRevision) + 1;
+
+            if (i > 0)
+                page = (int)Math.Ceiling((decimal)i / pageSize);
+
+            return page;
+        }
+
         public IEnumerable<Model> OrderModels
         {
             get { return Models.OrderBy(p=>p.Name); }
