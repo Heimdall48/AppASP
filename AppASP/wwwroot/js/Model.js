@@ -627,4 +627,3 @@ function SetPagination(i, controllername, record_id = 0) {
             }
     ).catch(function (err) { console.log('Fetch Error :-S', err); });
 }
-//Туту добавил

@@ -23,7 +23,7 @@
         }
 
      };*/
-    //XXX Pagination
+    
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",
