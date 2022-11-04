@@ -23,7 +23,7 @@
         }
 
      };*/
-    //Тест для Git
+    //Branch 1 Git
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",
