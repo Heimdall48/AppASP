@@ -18,6 +18,6 @@ namespace AppASP.ViewModels
             menuValuePairs = _menuValuePairs;
             PageViewExtension = _pageViewModel;
         }
-
+    
     }
 }

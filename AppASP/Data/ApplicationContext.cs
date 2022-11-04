@@ -41,7 +41,7 @@ namespace AppASP.Data
 
         public int GetModelPageNumber(int pModel_ID)
         {
-            int pageSize = PageViewExtension<int>.PageSize;
+            int pageSize = 3;
             // Вычисляем на какой странице находится id
             Model? vModel = (from m in Models
                              where m.ModelId == pModel_ID
@@ -52,6 +52,50 @@ namespace AppASP.Data
                 i = OrderModels.ToList().IndexOf(vModel) + 1;
             if (i > 0)
                 page = (int)Math.Ceiling((decimal)i / pageSize);
+            return page;
+        }
+
+        public int GetDevicePageNumber(int pModel_ID, int pDevice_ID)
+        {
+            int pageSize = 8;
+            // Вычисляем на какой странице находится id
+            Device? vDevice = (from d in Devices
+                             where d.DeviceId == pDevice_ID
+                             select d).FirstOrDefault();
+            int i = 0;
+            int page = 1;
+            if (vDevice != null)
+                i = (from d in Devices
+                     join r in Revisions on d.Revision_ID equals r.RevisionId
+                     orderby d.SerialNumber
+                     where r.Model_Id == pModel_ID
+                     select d).ToList().IndexOf(vDevice) + 1;
+
+            if (i > 0)
+                page = (int)Math.Ceiling((decimal)i / pageSize);
+
+            return page;
+        }
+
+        public int GetRevisionPageNumber(int pModel_ID, int pRevision_ID)
+        {
+            int pageSize = 4;
+            // Вычисляем на какой странице находится id
+            Revision? vRevision = (from r in Revisions
+                                    where r.RevisionId == pRevision_ID
+                                     select r).FirstOrDefault();
+            int i = 0;
+            int page = 1;
+
+            if (vRevision != null)
+                i = (from r in Revisions 
+                     orderby r.Name
+                     where r.Model_Id == pModel_ID
+                     select r).ToList().IndexOf(vRevision) + 1;
+
+            if (i > 0)
+                page = (int)Math.Ceiling((decimal)i / pageSize);
+
             return page;
         }
 

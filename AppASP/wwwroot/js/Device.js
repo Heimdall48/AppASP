@@ -4,23 +4,8 @@
         //Класс определяющий состояние прибора
         class DeviceClass {
             ID = 0;
-            Operation = null;//Возможные значения кроме null - U,I
+    
             DeviceEF = null;
-
-            ClearDevice() {
-                this.ID = 0;
-                this.Operation = null;
-            }
-            SetInsertOperation(){
-                this.Operation = 'I';
-            }
-
-            SetUpdateOperation() {
-                this.Operation = 'U';
-            }
-
-            IsUpdateOperation() { return this.Operation == 'U'; }
-            IsInsertOperation() { return this.Operation == 'I'; }
 
             DestroyModalForm() {
                 if (this.DeviceEF == null)
@@ -36,6 +21,15 @@
                     })
                 }
                 this.DeviceEF.show();
+            }
+
+            //Получение выделенной строки
+            InitDevice_ID() {
+                this.ID = 0;
+                let item = $('#device_body tr.selectlines:first');
+
+                if (item)
+                    this.ID = item.attr('data-id');
             }
         }
 
@@ -61,13 +55,8 @@
             if (ErrorSpan != null)
                 ErrorSpan.style.display = "none";
 
-            if (!vDevice.Operation) {
-                alert('Ошибка с определением типа операции над прибором!');
-                return;
-            }
-
             //Проверяем что щас делаем
-            if (vDevice.IsInsertOperation()) {
+            if (vDevice.ID == 0) {
                 $(this).find('#DeviceModalLabel').text("Добавить прибор");
                 $(this).find('#edSerialNumber').val("");
                 $(this).find('#cbRevisions').val(0);
@@ -82,11 +71,6 @@
         function LocateDevice(pID) {
             $('#device_body tr').removeClass('selectlines');
             $('#device_body tr[data-id="' + pID + '"]').toggleClass('selectlines');
-
-            if ($('#device_body tr[data-id="' + pID + '"]'))
-                vDevice.ID = pID;
-            else
-                vDevice.ID = 0;
         }
 
         $('#btnDeviceSave').click(function () {
@@ -116,21 +100,21 @@
                    vID = $("#LocateDevice_ID").val().trim();
                    if (vID != '0') {
                        vDevice.DeviceEF.hide();
-                       //Необходимо переоткрыть грид и спозиционироваться
+
+                       //Необходимо понять на какой странице находится запись и переоткрыть данную страницу + перестроить пагинацию
                        $.ajax({
                            type: 'POST',
-                           url: GetPath() + '/GetViewDevices',
-                           data: { 'pModel_ID': vModel_ID },
+                           url: GetPath() + '/GetDevicePageNumber',
+                           data: { 'pModel_ID': vModel_ID, 'pDevice_ID': vID},
                            success: function (data) {
-                               $('#dvDevices').replaceWith(data);
-                               PrepareDeviceGrid();
-                               LocateDevice(vID);
+                               let pagenumber = data;
+                               //Необходимо переоткрыть страницу и спозиционироваться
+                               RefreshPagination(pagenumber, vID);
                            },
                            error: function (jqxhr, status, errorMsg) {
                                alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
                            }
                        });
-                       //----------------------------------------------------
                    }
                },
                error: function (jqxhr, status, errorMsg) {
@@ -146,8 +130,10 @@
         });
 
         function DeleteDevice() {
+            vDevice.InitDevice_ID();
+
             //Если нет текущего, то посылаем
-            var vId = GetCurrentDevice_ID();
+            var vId = vDevice.ID;
 
             if (vId == "0" || vId === undefined) {
                 alert("Не выбран прибор для удаления");
@@ -167,9 +153,8 @@
                 url: GetPath() + '/DeleteDevice',
                 data: { 'pDevice_ID': vId, 'pModel_ID': vModel_ID },
                 success: function (data) {
-                    $('#dvDevices').replaceWith(data);
-                    vDevice.ClearDevice();
-                    PrepareDeviceGrid();
+                    var vpagenumber = data;
+                    RefreshPagination(vpagenumber);
                 },
                 error: function (jqxhr, status, errorMsg) {
                     alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
@@ -181,40 +166,35 @@
             return $("#cbModels").val();
         }
 
-        function GetCurrentDevice_ID() {
-            return vDevice.ID;
-        }
-
-       
         $('#btnDeviceAdd').click(function () {
             var vId = GetDeviceModel_ID();
             if (vId == "0" || vId === undefined) {
                 alert("Не выбрана текущая модель");
                 return;
             }
-            vDevice.SetInsertOperation(); 
+            vDevice.ID = 0;
             vDevice.InitDeviceEF();
         });
 
         $('#btnDeviceUpdate').click(function () {
+
+            vDevice.InitDevice_ID();
+
             //Если нет текущего, то посылаем
-            var vId = GetCurrentDevice_ID();
+            var vId = vDevice.ID;
 
             if (vId == "0" || vId === undefined) {
                 alert("Не выбран прибор для редактирования");
                 return;
             }
-
-            vDevice.SetUpdateOperation();
             vDevice.InitDeviceEF();
         });
 
         $('#cbModels').change(
             function () {
-                Model_ID = $(this).val();
-                //Загрузка приборов модели
-                RefreshDevices(Model_ID);
+                RefreshPagination();
 
+                Model_ID = $(this).val();
                 //Загрузка ревизий модели параллельным потоком
                 $.ajax({
                     type: 'POST',
@@ -231,7 +211,6 @@
         );
 
         function ClearDevices() {
-            vDevice.ClearDevice();
             document.getElementById('dvDevices').innerHTML = "";
             document.getElementById('divPaginationDevices').innerHTML = "";
         }
@@ -240,23 +219,47 @@
             $('#device_body tr').click(function () {
                 $('#device_body tr').removeClass('selectlines');
                 $(this).toggleClass('selectlines');
-                //Идентификатор вида продукции
-                var vDevice_ID = $(this).data("id");
-                vDevice.ID = vDevice_ID;
             });
         }
-
-        //Функция вывода приборов для модели
-        function RefreshDevices(pModel_ID) {
+       
+        //Перестройка пагинации и конкретной страницы данных. Если задана record_id, то позиционирование на неё
+        //Если задана record_id, то считаем что она соответствует page
+        function RefreshPagination(page = 1, record_id = 0) {
+            //Чистим пагинацию и набор приборов
             ClearDevices();
 
+            Model_ID = GetDeviceModel_ID();
+
+           //**********************перестроение пагинации************************
+           $.ajax({
+                type: 'POST',
+                url: GetPath() + '/DevicesPagination',
+                data: { 'pModel_ID': Model_ID, 'page': page },
+               success: function (data) {
+                   $('#divPaginationDevices').html(data);
+                    //На все кнопки надо повесить обработчик
+                    $('.device-page').click(function (e) {
+                        let page = e.target.innerHTML;
+                        RefreshPagination(page);
+                        return false;
+                    });
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                }
+            });
+            //********************************************************************* 
+            
+            //Вывод набора приборов на страницу
             $.ajax({
                 type: 'POST',
-                url: GetPath() + '/GetViewDevices',
-                data: { 'pModel_ID': pModel_ID },
+                url: GetPath() + '/RefreshDevices',
+                data: { 'pModel_ID': Model_ID,'page': page },
                 success: function (data) {
                     $('#dvDevices').replaceWith(data);
                     PrepareDeviceGrid();
+                    if (record_id !== 0)
+                        LocateDevice(record_id);
                 },
                 error: function (jqxhr, status, errorMsg) {
                     alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);

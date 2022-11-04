@@ -23,7 +23,7 @@
         }
 
      };*/
-    //Master Git
+    //Тут будет конфликт Git
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",

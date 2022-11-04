@@ -19,11 +19,14 @@
                   <div class="p-2" id="divPaginationModels">
                     @await Html.PartialAsync("Pagination", Model.PageViewExtension.pageViewModel)  
               </div>
+              @if (Convert.ToBoolean(ViewData["MODEL_UPDATE"]?.ToString()))
+              {
               <div class="p-2">
                 <button id="btnModelAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
                 <button id="btnModelUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
                 <button id="btnModelDelete" type="button" class="btn btn-success">Удалить</button>
               </div>
+              }
             </div>
 
             <div id="ModelError">

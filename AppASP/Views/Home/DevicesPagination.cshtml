@@ -1,5 +1,4 @@
 ﻿@model AppASP.ViewModels.PageViewModel
-
  <nav aria-label="Page navigation example">
     <ul class="pagination">
         @{
@@ -25,15 +24,13 @@
                 h = Model.TotalPages;
             if (l < 1)
                 l = 1;
-             
+
             for (int i = l; i <= h; i++)
             {
                 var classname = i == Model.PageNumber ? "page-item active" : "page-item";
-                        <li class="@classname"><a class="page-link" onclick="SetPagination(@i, 'Models'); return false" href="#">@i</a></li>
+                        <li class="@classname"><a class="page-link device-page" href="#">@i</a></li>
             }
-    }
-        
+        }
+
     </ul>
 </nav>
-
-<script type="text/javascript" src="~/js/Model.js"></script>

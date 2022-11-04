@@ -23,13 +23,13 @@ namespace AppASP.Class
 
         
         // тут будет проверка прав текущего пользователя на видимость меню
-        public static Dictionary<string, MenuObject> CheckAccess(string _current, string? username = null, ApplicationContext? ap = null)
+        public static Dictionary<string, MenuObject> CheckAccess(string _current, List<AccessObject>? _accessObjects = null)
         {
             #region "Формирование главного меню"
             //Надо проверить доступность меню
-            List<AccessObject>? accessObjects = null;
-            if (username != null)
-                accessObjects = ap?.GetAccessMenuItems(username);
+            List<AccessObject>? accessObjects = _accessObjects;
+            //if (username != null)
+            //    accessObjects = ap?.GetAccessMenuItems(username);
             
             //Настройка видимости
             foreach (var item in _MainMenu)
