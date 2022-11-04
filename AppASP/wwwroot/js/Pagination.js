@@ -23,7 +23,7 @@
         }
 
      };*/
-    //Branch 1 Git
+    //Branch Pagination
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",
