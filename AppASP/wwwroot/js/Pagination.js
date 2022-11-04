@@ -23,7 +23,7 @@
         }
 
      };*/
-    //Master Pagination
+    //Branch Pagination
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",
