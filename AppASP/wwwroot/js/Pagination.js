@@ -23,7 +23,7 @@
         }
 
      };*/
-    //Тут будет конфликт Git
+    //Master Pagination
     //fetch
     fetch('/Home/Refresh' + controllername, {
         method: "POST",
