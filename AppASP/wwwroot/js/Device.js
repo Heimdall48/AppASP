@@ -23,6 +23,12 @@
                 this.DeviceEF.show();
             }
 
+            HideModalForm() {
+                if (this.DeviceEF !== null) {
+                    this.DeviceEF.hide();
+                }
+            }
+
             //Получение выделенной строки
             InitDevice_ID() {
                 this.ID = 0;
@@ -99,7 +105,7 @@
                    //Если ошибок не существует, то закрываем форму. Здесь 0 - признак ошибки
                    vID = $("#LocateDevice_ID").val().trim();
                    if (vID != '0') {
-                       vDevice.DeviceEF.hide();
+                       vDevice.HideModalForm();
 
                        //Необходимо понять на какой странице находится запись и переоткрыть данную страницу + перестроить пагинацию
                        $.ajax({
