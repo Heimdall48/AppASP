@@ -34,6 +34,7 @@
                 @if (Convert.ToBoolean(ViewData["DEVICE_UPDATE"]?.ToString()))
                 {
                   <div class="p-2">
+                    <button id="btnRun" type="button" class="btn btn-primary m-3" data-bs-whatever="Run">Run</button>
                      <button id="btnDeviceAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
                      <button id="btnDeviceUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
                      <button id="btnDeviceDelete" type="button" class="btn btn-success">Удалить</button>
@@ -47,7 +48,7 @@
            <div id="dvDevices"></div>
 </div>
 @await Html.PartialAsync("DeviceModal")
-
+@await Html.PartialAsync("WaitingForm")
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script type="text/javascript" src="~/js/Device.js"></script>
 

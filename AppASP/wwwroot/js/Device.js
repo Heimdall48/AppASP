@@ -33,8 +33,35 @@
             }
         }
 
+        //Класс для окна ожидания
+        class WaitingClass {
+            WaitingForm = null;
+
+            DestroyWaitingForm() {
+                if (this.WaitingForm == null)
+                    return;
+                this.WaitingForm.dispose();
+                this.WaitingForm = null;
+            }
+
+            HideWaitingForm() {
+                if (this.WaitingForm !== null)
+                    this.WaitingForm.hide();
+            }
+
+            InitWaitingForm() {
+                if (this.WaitingForm == null) {
+                    this.WaitingForm = new bootstrap.Modal('#WaitingForm', {
+                        keyboard: true
+                    })
+                }
+                this.WaitingForm.show();
+            }
+        }
+
         //Через этот объект, а не через всякие теги будем пытаться работать
         let vDevice = new DeviceClass();
+        let vWaitingForm = new WaitingClass();
 
         function GetPath() {
             var vPath = $('#MyUrl').val();
@@ -266,4 +293,24 @@
                 }
             });
         }
+
+        $('#WaitingForm').on('hidden.bs.modal', function (event) {
+            vWaitingForm.DestroyWaitingForm();
+        });
+
+        //Пуск длительной операции с ожиданием
+        $('#btnRun').click(function () {
+            vWaitingForm.InitWaitingForm();
+            $.ajax({
+                type: 'POST',
+                url: GetPath() + '/RunMethod',
+                data: { },
+                success: function (data) {
+                    vWaitingForm.HideWaitingForm();
+                },
+                error: function (jqxhr, status, errorMsg) {
+                    alert("Статус: " + status + "; Ошибка: " + errorMsg + "; Описание:" + jqxhr.responseText);
+                }
+            });
+        });
  });
