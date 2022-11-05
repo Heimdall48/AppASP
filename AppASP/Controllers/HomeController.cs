@@ -291,5 +291,12 @@ namespace AppASP.Controllers
             return PartialView(vModelModify);
         }
 
+        public ContentResult RunMethod()
+        {
+            int milliseconds = 15000;
+            Thread.Sleep(milliseconds);
+            return Content(string.Empty);
+        }
+
     }
 }

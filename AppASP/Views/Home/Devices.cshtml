@@ -31,24 +31,24 @@
                           <h5>Приборы</h5>
                   </div>
                   <div class="p-2" id="divPaginationDevices"></div>
-                @if (Convert.ToBoolean(ViewData["DEVICE_UPDATE"]?.ToString()))
-                {
-                  <div class="p-2">
-                     <button id="btnDeviceRun" type="button" class="btn btn-primary m-2" data-bs-whatever="Пуск">Мощный пуск</button>
-                     <button id="btnDeviceAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
-                     <button id="btnDeviceUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
-                     <button id="btnDeviceDelete" type="button" class="btn btn-success">Удалить</button>
-                  </div>
-                }
+                    @if (Convert.ToBoolean(ViewData["DEVICE_UPDATE"]?.ToString()))
+                    {
+                    <div class="p-2">
+                        <button id="btnRun" type="button" class="btn btn-primary">Run</button>
+                    </div>
+                    <div class="p-2">
+                         
+                         <button id="btnDeviceAdd" type="button" class="btn btn-primary" data-bs-whatever="Добавить">Добавить</button>
+                         <button id="btnDeviceUpdate" type="button" class="btn btn-primary" data-bs-whatever="Изменить">Изменить</button>
+                         <button id="btnDeviceDelete" type="button" class="btn btn-success">Удалить</button>
+                    </div>
+                    }
                 </div>
-                <div id="DeviceError">
-                   <input id="IsDeviceError" type="hidden" value="0" />
-                 </div>
            </div> 
            <div id="dvDevices"></div>
 </div>
 @await Html.PartialAsync("DeviceModal")
-
+@await Html.PartialAsync("WaitingForm")
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script type="text/javascript" src="~/js/Device.js"></script>
 
