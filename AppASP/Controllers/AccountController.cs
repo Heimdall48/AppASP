@@ -10,7 +10,6 @@ namespace AppASP.Controllers
 {
     public class AccountController : Controller
     {
-       //Branch_1_12
         private readonly SignInManager<User> _signInManager;
         private readonly UserManager<User> _userManager;
 
